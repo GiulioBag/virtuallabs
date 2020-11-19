@@ -1,9 +1,6 @@
 package it.polito.ai.virtuallabs.controllers;
 
-import it.polito.ai.virtuallabs.dtos.CourseDTO;
-import it.polito.ai.virtuallabs.dtos.StudentDTO;
-import it.polito.ai.virtuallabs.dtos.TeamDTO;
-import it.polito.ai.virtuallabs.dtos.VMDTO;
+import it.polito.ai.virtuallabs.dtos.*;
 import org.springframework.hateoas.Link;
 
 public class ModelHelper {
@@ -26,5 +23,19 @@ public class ModelHelper {
     public static VMDTO enrich(VMDTO vmdto){
         //studentDTO.add(new Link("http://localhost:8080/API/students/" + studentDTO.getId()));
         return vmdto;
+    }
+
+    public static AssignmentDTO enrich(AssignmentDTO assignmentDTO){
+        return assignmentDTO;
+    }
+
+    public static PaperDTO enrich(PaperDTO paperDTO){
+        //studentDTO.add(new Link("http://localhost:8080/API/students/" + studentDTO.getId()));
+        return paperDTO;
+    }
+
+    public static DeliveredPaperDTO enrich(DeliveredPaperDTO dpDTO) {
+        //studentDTO.add(new Link("http://localhost:8080/API/students/" + studentDTO.getId()));
+        return dpDTO;
     }
 }

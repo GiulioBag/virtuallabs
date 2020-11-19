@@ -55,7 +55,6 @@ public class AssignmentServiceImpl implements AssignmentService{
     UtilitsService utilitsService;
 
 
-
     @Override
     public List<PaperDTO> getPapersByAssignment(Principal principal, String assignmentId) {
         if (!assignmentRepository.existsById(assignmentId))
@@ -73,7 +72,7 @@ public class AssignmentServiceImpl implements AssignmentService{
             }
             throw new PermissionDeniedException();
 
-        } else if (principal.getName().startsWith("s")) {
+        } else {
 
             // check if student exists
             Student student = utilitsService.checkStudent(principal.getName());
@@ -85,25 +84,15 @@ public class AssignmentServiceImpl implements AssignmentService{
             List <PaperDTO> paperDTOS = new ArrayList<>();
             paperDTOS.add(modelMapper.map(paperRepository.getByStudentAndAssignment(student, assignment), PaperDTO.class));
             return paperDTOS;
-
-        } else {
-
-            // TODO qui non credo che ci arriviamo mai, io lo togliere
-            throw new PermissionDeniedException();
         }
     }
 
     @Override
     @PreAuthorize("hasRole('TEACHER')")
     public StudentDTO getStudentByPaper(String teacherId, String paperId) {
-
         Paper paper = utilitsService.checkPaper(paperId);
-
-        // changes paper's state if its assignment is expired
-        utilitsService.checkExpiredAssignmentByPaper(paper, false);
-
-        if(!teacherRepository.existsById(teacherId))
-            throw new TeacherNotFoundException(teacherId);
+        utilitsService.checkTeacher(teacherId);
+        utilitsService.checkCourseOwner(paper.getAssignment().getCourse().getName(), teacherId);
 
         return modelMapper.map(paper.getStudent(), StudentDTO.class);
     }
@@ -111,12 +100,9 @@ public class AssignmentServiceImpl implements AssignmentService{
     @Override
     @PreAuthorize("hasRole('TEACHER')")
     public List<DeliveredPaperDTO> getHistoryByPaper(String paperId, String teacherId) {
-        if(!teacherRepository.existsById(teacherId))
-            throw new TeacherNotFoundException(teacherId);
-
         Paper paper = utilitsService.checkPaper(paperId);
-        // changes paper's state if its assignment is expired
-        utilitsService.checkExpiredAssignmentByPaper(paper, false);
+        utilitsService.checkTeacher(teacherId);
+        utilitsService.checkCourseOwner(paper.getAssignment().getCourse().getName(), teacherId);
 
         return paper.getDeliveredPapers()
                 .stream()
@@ -147,6 +133,7 @@ public class AssignmentServiceImpl implements AssignmentService{
                     Paper p = new Paper();
                     p.setAssignment(a);
                     p.setStudent(s);
+                    p.setChangeable(true);
 
                     DeliveredPaper dp = new DeliveredPaper();
                     dp.setDeliveredDate(now);

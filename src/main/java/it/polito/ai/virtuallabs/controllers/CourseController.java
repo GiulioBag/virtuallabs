@@ -8,6 +8,7 @@ import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotHasTeamInC
 import it.polito.ai.virtuallabs.exceptions.teacherExceptions.PermissionDeniedException;
 import it.polito.ai.virtuallabs.exceptions.teacherExceptions.TeacherNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.vmModelExceptions.VMModelExcessiveLimitsException;
+import it.polito.ai.virtuallabs.services.AssignmentService;
 import it.polito.ai.virtuallabs.services.CourseService;
 import it.polito.ai.virtuallabs.services.TeamService;
 import it.polito.ai.virtuallabs.services.VMService;
@@ -24,6 +25,7 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("API/courses")
@@ -31,14 +33,9 @@ import java.util.Optional;
 public class CourseController {
 
     @Autowired
-    private CourseService courseService;
-
+    CourseService courseService;
     @Autowired
-    private VMService vmService;
-
-
-    @Autowired
-    private TeamService teamService;
+    AssignmentService assignmentService;
 
     @GetMapping({"", "/"})
     public List<CourseDTO> getCourses (){
@@ -284,6 +281,19 @@ public class CourseController {
         }
     }
 
+    @GetMapping("/{courseName}/teams")
+    public List<TeamDTO> getTeamsByCourse(Principal principal, @PathVariable(name = "courseName") String courseName){
+        try{
+            return courseService.getTeamsByCourse(courseName, principal.getName()).stream().map(ModelHelper::enrich).collect(Collectors.toList());
+        }catch(TeacherNotFoundException | CourseNotFoundException e){
+            log.warning("getTeamsByCourse: " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }catch(PermissionDeniedException e){
+            log.warning("getTeamsByCourse: " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+        }
+    }
+
     @GetMapping("/{courseName}/freeStudents")
     public List<StudentDTO> possibleTeamMembers(@PathVariable (name = "courseName") String courseName, Principal principal){
         try {
@@ -337,6 +347,30 @@ public class CourseController {
         } catch (StudentNotEnrolledToCourseException  e){
             log.warning("getVMS: " + e.getMessage());
             throw  new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+        }
+    }
+
+    @PostMapping("/{courseName}/insertAssignment")
+    @ResponseStatus(HttpStatus.OK)
+    public void insertAssignment(Principal principal, @PathVariable(name = "courseName") String courseName, @RequestBody AssignmentDTO assignmentDTO){
+        try{
+            assignmentService.insertAssignment(assignmentDTO, courseName, principal.getName());
+        }catch(TeacherNotFoundException | CourseNotFoundException e){
+            log.warning("insertAssignment: " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @PostMapping("/{courseName}/assignments")
+    public List<AssignmentDTO> getAssignmentsByCourse(Principal principal, @PathVariable(name = "courseName") String courseName){
+        try{
+            return courseService.getAssignmentsByCourse(principal, courseName).stream().map(ModelHelper::enrich).collect(Collectors.toList());
+        }catch(CourseNotFoundException | TeacherNotFoundException | StudentNotFoundException e){
+            log.warning("getAssignmentsByCourse: " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }catch (PermissionDeniedException | StudentNotEnrolledToCourseException e){
+            log.warning("getAssignmentsByCourse: " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
         }
     }
 

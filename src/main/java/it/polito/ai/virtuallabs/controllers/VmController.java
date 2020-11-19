@@ -95,7 +95,17 @@ public class VmController {
 
     }
 
-
-
+    @GetMapping(value = "/{vmId}/exec", produces = "image/png")
+    public @ResponseBody Byte[] execVM(Principal principal, @PathVariable(name = "vmId") String vmId){
+        try{
+            return vmService.execVM(vmId, principal);
+        }catch(TeacherNotFoundException | VmNotFoundException | StudentNotFoundException e){
+            log.warning("execVM: " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }catch(PermissionDeniedException | StudentNotOwnVMException | VmCourseNotActive e){
+            log.warning("execVM: " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+        }
+    }
 
 }

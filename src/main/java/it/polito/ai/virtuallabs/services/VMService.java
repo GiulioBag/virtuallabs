@@ -14,6 +14,6 @@ public interface VMService {
     void switchOffVM(String vmId, Principal principal);
     void deleteVM(String vmId, Principal principal);
     void createVM(VMDTO vmdto, String courseId, Principal principal);
-    String execVM(String vmId, Principal principal);
+    Byte[] execVM(String vmId, Principal principal);
 
 }

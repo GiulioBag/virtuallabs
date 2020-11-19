@@ -521,7 +521,7 @@ public class CourseServiceImpl implements CourseService{
             }
             throw new PermissionDeniedException();
 
-        } else if (principal.getName().startsWith("s")) {
+        } else {
 
             // check if student exists
             Student student = utilitsService.checkStudent(principal.getName());
@@ -564,9 +564,6 @@ public class CourseServiceImpl implements CourseService{
                     .map(assignment -> modelMapper.map(assignment, AssignmentDTO.class))
                     .collect(Collectors.toList());
 
-        } else {
-            // TODO qui non credo che ci arriviamo mai, io lo togliere
-            throw new PermissionDeniedException();
         }
     }
 }

@@ -210,20 +210,23 @@ public class VMServiceImpl implements VMService {
     }
 
     @Override
-    public String execVM(String vmId, Principal principal) {
+    public Byte[] execVM(String vmId, Principal principal) {
 
         VM vm;
         if (principal.getName().startsWith("s")) {
             vm = utilitsService.checkExistingVMCondition(vmId, principal);
-        } else if (principal.getName().startsWith("d")) {
+        } else {
             vm = utilitsService.checkTeacherCondition(vmId, principal);
-        } else
-            throw new PermissionDeniedException();
+        }
 
         // check if the course is active
         utilitsService.checkCourseActive(vmId);
 
-        return vm.getVmImage();
+        String path = vm.getVmImage();
+
+        //...
+
+        return null;
     }
 
 }

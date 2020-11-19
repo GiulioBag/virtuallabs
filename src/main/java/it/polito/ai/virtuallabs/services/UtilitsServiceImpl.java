@@ -5,6 +5,7 @@ import it.polito.ai.virtuallabs.dtos.VMDTO;
 import it.polito.ai.virtuallabs.entities.*;
 import it.polito.ai.virtuallabs.exceptions.assignmentExceptions.AssignmentException;
 import it.polito.ai.virtuallabs.exceptions.assignmentExceptions.AssignmentNotFoundException;
+import it.polito.ai.virtuallabs.exceptions.assignmentExceptions.ExpiredAssignmentException;
 import it.polito.ai.virtuallabs.exceptions.paperExceptions.PaperNotChangeableException;
 import it.polito.ai.virtuallabs.exceptions.paperExceptions.PaperNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotFoundException;
@@ -286,7 +287,7 @@ public class UtilitsServiceImpl implements UtilitsService {
                     paperRepository.save(assignmentPaper);
                 }
                 if (activeException)
-                    throw new AssignmentException(assignment.getId());
+                    throw new ExpiredAssignmentException(assignment.getId());
             }
         } else {
             if (activeException)

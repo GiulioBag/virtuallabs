@@ -8,16 +8,6 @@ import java.util.List;
 
 public interface TeacherService {
 
-    // Teacher: course management
-    // - courses
-
     List<CourseDTO> getCoursesByTeacher(String teacherId);
-
-    //Teacher: Team management
-
-
-
-
-
 
 }
