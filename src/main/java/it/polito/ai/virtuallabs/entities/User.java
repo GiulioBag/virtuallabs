@@ -1,0 +1,86 @@
+package it.polito.ai.virtuallabs.entities;
+
+import it.polito.ai.virtuallabs.dtos.UserDTO;
+import it.polito.ai.virtuallabs.enums.Role;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+import static java.util.stream.Collectors.toList;
+
+@Entity
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class User implements UserDetails {
+
+    @Id
+    private String serialNumber;
+    private String password;
+
+    private String email;
+    private String name;
+    private String lastName;
+
+    private String photo;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @Builder.Default
+    private List<String> roles = new ArrayList<>();
+
+    private boolean active;
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return this.roles.stream().map(SimpleGrantedAuthority::new).collect(toList());
+    }
+
+
+    public User (UserDTO userDTO){
+      this.serialNumber = userDTO.getSerialNumber();
+        this.password= userDTO.getPassword();
+        this.email= userDTO.getEmail();
+        this.name= userDTO.getName();
+        this.lastName = userDTO.getLastName();
+
+        //TODO: salvare l'immagine del DTO e memorizzare nel campo "photo" il path
+        this.photo = null;
+
+        this.roles = new ArrayList<>();
+    }
+
+    @Override
+    public String getUsername() {
+        return this.serialNumber;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return this.active;
+    }
+}
