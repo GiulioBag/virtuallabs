@@ -6,12 +6,11 @@ import it.polito.ai.virtuallabs.repositories.TeamRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 
 @RestController
 @RequestMapping("/test")
@@ -29,12 +28,11 @@ public class TestController {
     @Autowired
     ModelMapper modelMapper;
 
-    @GetMapping(value = {"","/"}, produces = "image/png")
-    public @ResponseBody byte[] execVM() throws IOException {
-        InputStream is = this.getClass().getResourceAsStream("/img.jpg");
-        BufferedImage img = ImageIO.read(is);
-        ByteArrayOutputStream bao = new ByteArrayOutputStream();
-        ImageIO.write(img, "jpg", bao);
-        return bao.toByteArray();
+    @PostMapping(value = {"","/"})
+    public void test(@RequestParam("img") MultipartFile file) throws IOException {
+        String destination = "images/prova.jpg";
+        File f = new File(destination);
+        file.transferTo(f);
+        f.
     }
 }

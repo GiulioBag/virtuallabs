@@ -24,6 +24,11 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.Principal;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -319,4 +324,17 @@ public class UtilitsServiceImpl implements UtilitsService {
         return teacher.get();
     }
 
+    @Override
+    public String fromImageToPath(byte[] image) {
+        return null;
+    }
+
+    @Override
+    public byte[] fromPathToImage(String path) throws IOException {
+        InputStream is = this.getClass().getResourceAsStream(path);
+        BufferedImage img = ImageIO.read(is);
+        ByteArrayOutputStream bao = new ByteArrayOutputStream();
+        ImageIO.write(img, "jpg", bao);
+        return bao.toByteArray();
+    }
 }

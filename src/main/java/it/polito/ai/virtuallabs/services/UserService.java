@@ -13,4 +13,6 @@ public interface UserService {
     void confirmRegistration(String tokeID);
     ResponseEntity<Map<Object, Object>> signin (AuthenticationRequestDTO data);
     void deleteToken(String tokenID);
+
+
 }

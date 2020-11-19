@@ -3,6 +3,7 @@ package it.polito.ai.virtuallabs.services;
 import it.polito.ai.virtuallabs.dtos.VMDTO;
 import it.polito.ai.virtuallabs.entities.*;
 
+import java.io.IOException;
 import java.security.Principal;
 
 public interface UtilitsService {
@@ -36,9 +37,10 @@ public interface UtilitsService {
     // PAPER
     Paper checkPaper (String paperId);
 
-
-
     // COURSE
     Course checkCourse(String courseName);
     Course checkCourseOwner (String courseName, String teacherId);
+
+    String fromImageToPath(byte[] image);
+    byte[] fromPathToImage(String path) throws IOException;
 }
