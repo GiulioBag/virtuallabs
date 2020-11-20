@@ -6,6 +6,7 @@ import it.polito.ai.virtuallabs.entities.Student;
 import it.polito.ai.virtuallabs.enums.PaperStatus;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.springframework.hateoas.RepresentationModel;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -14,7 +15,7 @@ import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class PaperDTO   {
+public class PaperDTO   extends RepresentationModel<TeacherDTO>  {
     private String id;
     private boolean changeable;
     private int score;

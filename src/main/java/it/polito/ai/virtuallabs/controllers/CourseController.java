@@ -296,7 +296,7 @@ public class CourseController {
         }
     }
 
-    @GetMapping("/{courseName}/freeStudents")
+    @GetMapping("/{courseName}/freestudents")
     public List<StudentDTO> possibleTeamMembers(@PathVariable (name = "courseName") String courseName, Principal principal){
         try {
             List<StudentDTO> studentDTOList = courseService.possibleTeamMember(courseName, principal);

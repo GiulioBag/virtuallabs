@@ -6,6 +6,7 @@ import it.polito.ai.virtuallabs.entities.Paper;
 import it.polito.ai.virtuallabs.entities.Teacher;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.springframework.hateoas.RepresentationModel;
 
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
@@ -16,7 +17,7 @@ import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class AssignmentDTO {
+public class AssignmentDTO extends RepresentationModel<StudentDTO> {
 
     private String id;
     private String name;

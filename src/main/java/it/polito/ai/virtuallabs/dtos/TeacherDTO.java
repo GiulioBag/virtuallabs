@@ -15,12 +15,4 @@ public class TeacherDTO extends RepresentationModel<TeacherDTO> {
     private String serialNumber;
     private Byte[] photo;
 
-    public TeacherDTO(Teacher t){
-        email = t.getUser().getEmail();
-        name = t.getUser().getName();
-        lastName = t.getUser().getLastName();
-        serialNumber = t.getUser().getSerialNumber();
-        //TODO: dal path recuperare il Byte Array corrispondente
-        photo = null;
-    }
 }
