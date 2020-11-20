@@ -45,20 +45,6 @@ public class User implements UserDetails {
         return this.roles.stream().map(SimpleGrantedAuthority::new).collect(toList());
     }
 
-
-    public User (UserDTO userDTO){
-      this.serialNumber = userDTO.getSerialNumber();
-        this.password= userDTO.getPassword();
-        this.email= userDTO.getEmail();
-        this.name= userDTO.getName();
-        this.lastName = userDTO.getLastName();
-
-        //TODO: salvare l'immagine del DTO e memorizzare nel campo "photo" il path
-        this.photo = null;
-
-        this.roles = new ArrayList<>();
-    }
-
     @Override
     public String getUsername() {
         return this.serialNumber;

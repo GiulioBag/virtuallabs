@@ -41,6 +41,6 @@ public interface UtilitsService {
     Course checkCourse(String courseName);
     Course checkCourseOwner (String courseName, String teacherId);
 
-    String fromImageToPath(byte[] image);
+    void fromImageToPath(byte[] image, String path) throws IOException;
     byte[] fromPathToImage(String path) throws IOException;
 }

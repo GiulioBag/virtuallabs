@@ -3,6 +3,7 @@ package it.polito.ai.virtuallabs.services;
 import it.polito.ai.virtuallabs.dtos.AuthenticationRequestDTO;
 import it.polito.ai.virtuallabs.dtos.UserDTO;
 import it.polito.ai.virtuallabs.entities.*;
+import it.polito.ai.virtuallabs.exceptions.ImageException;
 import it.polito.ai.virtuallabs.exceptions.confirmTokenException.ConfirmTokenExpiredException;
 import it.polito.ai.virtuallabs.exceptions.confirmTokenException.ConfirmTokenNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.userException.*;
@@ -17,11 +18,9 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.sql.Timestamp;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static org.springframework.http.ResponseEntity.ok;
 
@@ -58,10 +57,14 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private JwtBlacklistRepository jwtBlacklistRepository;
 
+    @Autowired
+    UtilitsService utilitsService;
+
     private static final String STUDENT_ROLE = "ROLE_STUDENT";
     private static final String TEACHER_ROLE = "ROLE_TEACHER";
 
-    public UserDTO getUser(String userId){
+    @Override
+    public UserDTO getUser(String userId) throws IOException {
 
         // check if users exists
         Optional<User> optUser = userRepository.findById(userId);
@@ -70,10 +73,11 @@ public class UserServiceImpl implements UserService {
             throw new UserNotFoundException(userId);
         }
 
-        return new UserDTO(optUser.get());
+        return fromEntityToDTO(optUser.get());
     }
 
-    public void addUser(UserDTO userDTO) {
+    @Override
+    public void addUser(UserDTO userDTO) throws IOException {
 
         // Check if last name and name are not null
         if(userDTO.getLastName() == null) {
@@ -114,7 +118,7 @@ public class UserServiceImpl implements UserService {
             throw new EmailAlreadyExistException();
         }
 
-        User user = new User(userDTO);
+        User user = fromDTOtoEntity(userDTO);
         user.setPassword(encoder.encode(password));
         user.setActive(false);
 
@@ -142,6 +146,7 @@ public class UserServiceImpl implements UserService {
 
     }
 
+    @Override
     public void confirmRegistration(String tokeID) {
 
         Optional<ConfirmToken> optConfirmToken = confirmTokenRepository.findById(tokeID);
@@ -176,6 +181,7 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+    @Override
     public ResponseEntity<Map<Object, Object>> signin (AuthenticationRequestDTO data){
 
         String username = data.getUsername();
@@ -191,8 +197,36 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void deleteToken(String tokenID) {
+    public void deleteToken(String tokenID)  {
         JwtBlacklist jwt = new JwtBlacklist(tokenID.substring(7), new Date());
         jwtBlacklistRepository.save(jwt);
     }
+
+    private User fromDTOtoEntity(UserDTO userDTO) throws IOException {
+        User user = new User();
+        user.setSerialNumber(userDTO.getSerialNumber());
+        user.setPassword(userDTO.getPassword());
+        user.setEmail(userDTO.getEmail());
+        user.setName(userDTO.getName());
+        user.setLastName(userDTO.getLastName());
+        user.setRoles(new ArrayList<>());
+
+        String path = "users/" + user.getSerialNumber();
+        utilitsService.fromImageToPath(userDTO.getPhoto(), path);
+        user.setPhoto(path);
+        return user;
+    }
+
+    private UserDTO fromEntityToDTO(User user) throws IOException {
+        UserDTO userDto = new UserDTO();
+        userDto.setSerialNumber(user.getSerialNumber());
+        userDto.setPassword(user.getPassword());
+        userDto.setEmail(user.getEmail());
+        userDto.setName(user.getName());
+        userDto.setLastName(user.getLastName());
+        String path = "users/" + user.getSerialNumber();
+        userDto.setPhoto( utilitsService.fromPathToImage(path));
+        return userDto;
+    }
+
 }

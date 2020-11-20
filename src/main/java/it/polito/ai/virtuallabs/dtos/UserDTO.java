@@ -12,7 +12,7 @@ public class UserDTO {
     private String email;
     private String name;
     private String lastName;
-    private Byte [] photo;
+    private byte [] photo;
 
 
     public UserDTO(User user) {

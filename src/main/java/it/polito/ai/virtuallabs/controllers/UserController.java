@@ -21,6 +21,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,7 +47,7 @@ public class UserController {
         try {
             UserDTO userDTO = userService.getUser(userId);
             return userDTO;
-        } catch (UserNotFoundException e) {
+        } catch (UserNotFoundException | IOException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
     }
@@ -58,7 +59,7 @@ public class UserController {
             userService.addUser(user);
         } catch (EmailAlreadyExistException | SerialNumberAlreadyExistException e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
-        } catch (UserException | NullPointerException e) {
+        } catch (UserException | NullPointerException | IOException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
     }

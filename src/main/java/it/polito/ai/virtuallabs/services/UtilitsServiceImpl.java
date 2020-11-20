@@ -3,6 +3,7 @@ package it.polito.ai.virtuallabs.services;
 import com.zaxxer.hikari.pool.HikariProxyCallableStatement;
 import it.polito.ai.virtuallabs.dtos.VMDTO;
 import it.polito.ai.virtuallabs.entities.*;
+import it.polito.ai.virtuallabs.exceptions.ImageException;
 import it.polito.ai.virtuallabs.exceptions.assignmentExceptions.AssignmentException;
 import it.polito.ai.virtuallabs.exceptions.assignmentExceptions.AssignmentNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.assignmentExceptions.ExpiredAssignmentException;
@@ -20,15 +21,14 @@ import it.polito.ai.virtuallabs.exceptions.vmException.VmCourseNotActive;
 import it.polito.ai.virtuallabs.exceptions.vmException.VmNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.vmException.VmParameterException;
 import it.polito.ai.virtuallabs.repositories.*;
+import org.apache.commons.io.FileUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.security.Principal;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -325,13 +325,20 @@ public class UtilitsServiceImpl implements UtilitsService {
     }
 
     @Override
-    public String fromImageToPath(byte[] image) {
-        return null;
+    public void fromImageToPath(byte[] image, String path) {
+        File file = new File("src/main/resources/static/images/" + path + ".jpg");
+        try (OutputStream os = new FileOutputStream(file)) {
+            os.write(image);
+            os.flush();
+
+        } catch (Exception e) {
+            throw new ImageException(e.getMessage());
+        }
     }
 
     @Override
     public byte[] fromPathToImage(String path) throws IOException {
-        InputStream is = this.getClass().getResourceAsStream(path);
+        InputStream is = this.getClass().getResourceAsStream("/static/images/" + path + ".jpg");
         BufferedImage img = ImageIO.read(is);
         ByteArrayOutputStream bao = new ByteArrayOutputStream();
         ImageIO.write(img, "jpg", bao);
