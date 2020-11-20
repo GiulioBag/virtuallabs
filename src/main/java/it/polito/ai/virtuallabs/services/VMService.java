@@ -2,6 +2,7 @@ package it.polito.ai.virtuallabs.services;
 
 import it.polito.ai.virtuallabs.dtos.VMDTO;
 
+import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
 
@@ -14,6 +15,6 @@ public interface VMService {
     void switchOffVM(String vmId, Principal principal);
     void deleteVM(String vmId, Principal principal);
     void createVM(VMDTO vmdto, String courseId, Principal principal);
-    Byte[] execVM(String vmId, Principal principal);
+    byte[] execVM(String vmId, Principal principal) throws IOException;
 
 }

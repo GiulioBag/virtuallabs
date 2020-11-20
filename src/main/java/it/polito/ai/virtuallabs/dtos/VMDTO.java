@@ -16,15 +16,4 @@ public class VMDTO {
     private VmState state;
     private Byte[] vmImage;
 
-    public VMDTO(VM vm){
-        id = vm.getId();
-        vcpu = vm.getVcpu();
-        space = vm.getSpace();
-        ram = vm.getRam();
-        state = vm.getState();
-        //TODO: dal path recuperare il Byte Array corrispondente
-        vmImage = null;
-    }
-
-
 }

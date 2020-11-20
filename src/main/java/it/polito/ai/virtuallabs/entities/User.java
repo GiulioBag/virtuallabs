@@ -32,8 +32,6 @@ public class User implements UserDetails {
     private String name;
     private String lastName;
 
-    private String photo;
-
     @ElementCollection(fetch = FetchType.EAGER)
     @Builder.Default
     private List<String> roles = new ArrayList<>();

@@ -19,7 +19,6 @@ public class VM {
     private int space;
     private int ram;
     private VmState state;
-    private String vmImage;
 
     @ManyToOne
     @JoinColumn(name = "team_id")
@@ -27,16 +26,6 @@ public class VM {
 
     @ManyToMany(mappedBy = "vms")
     private List<Student> owners = new ArrayList<>();
-
-    public VM(VMDTO vmdto){
-        id = vmdto.getId();
-        vcpu = vmdto.getVcpu();
-        space = vmdto.getSpace();
-        ram = vmdto.getRam();
-        state = vmdto.getState();
-        //TODO: salvare l'immagine del DTO e memorizzare nel campo "vmImage" il path
-        vmImage = null;
-    }
 
     // add/remove team
     public void setTeam(Team t){

@@ -4,7 +4,6 @@ import it.polito.ai.virtuallabs.dtos.VMDTO;
 import it.polito.ai.virtuallabs.entities.*;
 import it.polito.ai.virtuallabs.enums.VmState;
 import it.polito.ai.virtuallabs.exceptions.teacherExceptions.PermissionDeniedException;
-import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotHasTeamInCourseException;
 import it.polito.ai.virtuallabs.exceptions.vmException.*;
 import it.polito.ai.virtuallabs.repositories.*;
@@ -13,8 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.security.Principal;
-import java.util.Optional;
 
 @Service
 public class VMServiceImpl implements VMService {
@@ -210,7 +209,7 @@ public class VMServiceImpl implements VMService {
     }
 
     @Override
-    public Byte[] execVM(String vmId, Principal principal) {
+    public byte[] execVM(String vmId, Principal principal) throws IOException {
 
         VM vm;
         if (principal.getName().startsWith("s")) {
@@ -218,15 +217,11 @@ public class VMServiceImpl implements VMService {
         } else {
             vm = utilitsService.checkTeacherCondition(vmId, principal);
         }
-
         // check if the course is active
         utilitsService.checkCourseActive(vmId);
-
-        String path = vm.getVmImage();
-
-        //...
-
-        return null;
+        if(vm.getState() == VmState.OFF)
+            throw new VmOffException();
+        return utilitsService.fromPathToImage("/vm.jpg");
     }
 
 }

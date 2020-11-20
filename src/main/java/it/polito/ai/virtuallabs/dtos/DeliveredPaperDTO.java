@@ -14,14 +14,6 @@ public class DeliveredPaperDTO   {
     private String id;
     private PaperStatus status;
     private Timestamp deliveredDate;
-    private Byte[] image;
-
-    public DeliveredPaperDTO(DeliveredPaper dp){
-        id = dp.getId();
-        status = dp.getStatus();
-        deliveredDate = dp.getDeliveredDate();
-        //TODO: dal path recuperare il Byte Array corrispondente
-        image = null;
-    }
+    private byte[] image;
 
 }

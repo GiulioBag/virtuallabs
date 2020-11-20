@@ -213,7 +213,6 @@ public class UserServiceImpl implements UserService {
 
         String path = "users/" + user.getSerialNumber();
         utilitsService.fromImageToPath(userDTO.getPhoto(), path);
-        user.setPhoto(path);
         return user;
     }
 

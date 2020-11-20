@@ -2,6 +2,7 @@ package it.polito.ai.virtuallabs.controllers;
 
 import it.polito.ai.virtuallabs.dtos.AuthenticationRequestDTO;
 import it.polito.ai.virtuallabs.dtos.UserDTO;
+import it.polito.ai.virtuallabs.exceptions.ImageException;
 import it.polito.ai.virtuallabs.exceptions.confirmTokenException.ConfirmTokenExpiredException;
 import it.polito.ai.virtuallabs.exceptions.confirmTokenException.ConfirmTokenNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.userException.EmailAlreadyExistException;
@@ -47,7 +48,7 @@ public class UserController {
         try {
             UserDTO userDTO = userService.getUser(userId);
             return userDTO;
-        } catch (UserNotFoundException | IOException e) {
+        } catch (UserNotFoundException | IOException | ImageException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
     }
@@ -59,7 +60,7 @@ public class UserController {
             userService.addUser(user);
         } catch (EmailAlreadyExistException | SerialNumberAlreadyExistException e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
-        } catch (UserException | NullPointerException | IOException e) {
+        } catch (UserException | NullPointerException | IOException | ImageException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
     }

@@ -13,6 +13,7 @@ import it.polito.ai.virtuallabs.exceptions.courseException.CourseNotFoundExcepti
 import it.polito.ai.virtuallabs.exceptions.deliveredPaperException.MissFiledDeliveredPaperException;
 import it.polito.ai.virtuallabs.exceptions.deliveredPaperException.WrongStutusDeliveredPaperException;
 import it.polito.ai.virtuallabs.exceptions.paperExceptions.NotChangeablePaperException;
+import it.polito.ai.virtuallabs.exceptions.paperExceptions.PaperNotCheckableException;
 import it.polito.ai.virtuallabs.exceptions.paperExceptions.PaperNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotEnrolledToCourseException;
 import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotFoundException;
@@ -25,12 +26,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
+import java.io.IOException;
 import java.security.Principal;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -99,20 +98,27 @@ public class AssignmentServiceImpl implements AssignmentService{
 
     @Override
     @PreAuthorize("hasRole('TEACHER')")
-    public List<DeliveredPaperDTO> getHistoryByPaper(String paperId, String teacherId) {
+    public List<DeliveredPaperDTO> getHistoryByPaper(String paperId, String teacherId){
         Paper paper = utilitsService.checkPaper(paperId);
         utilitsService.checkTeacher(teacherId);
         utilitsService.checkCourseOwner(paper.getAssignment().getCourse().getName(), teacherId);
 
         return paper.getDeliveredPapers()
                 .stream()
-                .map(i -> modelMapper.map(i, DeliveredPaperDTO.class))
+                .map(i -> {
+                    try {
+                        return fromEntityToDTO(i);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    return null;
+                })
                 .collect(Collectors.toList());
     }
 
     @Override
     @PreAuthorize("hasRole('TEACHER')")
-    public void insertAssignment(AssignmentDTO assignmentDTO, String courseName, String teacherId){
+    public void insertAssignment(AssignmentDTO assignmentDTO, String courseName, String teacherId) throws IOException {
 
         if(!teacherRepository.existsById(teacherId))
             throw new TeacherNotFoundException(teacherId);
@@ -124,7 +130,7 @@ public class AssignmentServiceImpl implements AssignmentService{
         List<Course> courses = t.getCourses();
         for (Course c : courses) {
             if (c.getName().equals(courseName)) {
-                Assignment a = modelMapper.map(assignmentDTO, Assignment.class);
+                Assignment a = fromDTOToEntity(assignmentDTO);
                 a.setCourse(c);
                 a.setCreator(t);
                 a.setReleaseDate(now);
@@ -154,7 +160,7 @@ public class AssignmentServiceImpl implements AssignmentService{
 
     @Override
     @PreAuthorize("hasRole('STUDENT')")
-    public void insertPaper (DeliveredPaperDTO deliveredPaperDTO, String paperId, Principal principal){
+    public void insertPaper (byte[] image, String paperId, Principal principal){
 
         // check if the student exists
         Student student = utilitsService.checkStudent(principal.getName());
@@ -189,4 +195,82 @@ public class AssignmentServiceImpl implements AssignmentService{
         deliveredPaperRepository.save(deliveredPaper);
     }
 
+    Assignment fromDTOToEntity(AssignmentDTO dto) throws IOException {
+        Assignment a = new Assignment();
+        String id;
+        do {
+            id = UUID.randomUUID().toString();
+        }while(assignmentRepository.existsById(id));
+        a.setId(id);
+        a.setReleaseDate(dto.getReleaseDate());
+        a.setExpireDate(dto.getExpireDate());
+        a.setName(dto.getName());
+        utilitsService.fromImageToPath(dto.getContent(), "/assignments/" + id);
+        return a;
+    }
+
+    AssignmentDTO fromEntityToDTO(Assignment a) throws IOException {
+        AssignmentDTO dto = new AssignmentDTO();
+        dto.setId(a.getId());
+        dto.setName(a.getName());
+        dto.setExpireDate(a.getExpireDate());
+        dto.setReleaseDate(a.getReleaseDate());
+        dto.setContent(utilitsService.fromPathToImage("/assignments/" + a.getId()));
+        return dto;
+    }
+
+    DeliveredPaper fromDTOToEntity(DeliveredPaperDTO dto) throws IOException {
+        DeliveredPaper dp = new DeliveredPaper();
+        String id;
+        do {
+            id = UUID.randomUUID().toString();
+        }while(deliveredPaperRepository.existsById(id));
+        dp.setId(id);
+        dp.setStatus(dto.getStatus());
+        dp.setDeliveredDate(dto.getDeliveredDate());
+        if(dto.getStatus() == PaperStatus.CHECKED || dp.getStatus() == PaperStatus.DELIVERED){
+            utilitsService.fromImageToPath(dto.getImage(), "/deliveredPapers/" + id);
+        }
+        return dp;
+    }
+    DeliveredPaperDTO fromEntityToDTO(DeliveredPaper dp) throws IOException {
+        DeliveredPaperDTO dto = new DeliveredPaperDTO();
+        dto.setId(dp.getId());
+        dto.setDeliveredDate(dp.getDeliveredDate());
+        dto.setStatus(dp.getStatus());
+        if(dp.getStatus() == PaperStatus.CHECKED || dp.getStatus() == PaperStatus.DELIVERED)
+            dto.setImage(utilitsService.fromPathToImage("/deliveredPapers/" + dto.getId()));
+        else
+            dto.setImage(null);
+        return dto;
+    };
+
+    @Override
+    public DeliveredPaperDTO getLastVersion(String teacherId, String paperId) throws IOException {
+        utilitsService.checkTeacher(teacherId);
+        Paper p = utilitsService.checkPaper(paperId);
+        utilitsService.checkCourseOwner(p.getAssignment().getCourse().getName(), teacherId);
+        return fromEntityToDTO(deliveredPaperRepository.getAllByPaperOrderByDeliveredDate(p).get(deliveredPaperRepository.getAllByPaperOrderByDeliveredDate(p).size()-1));
+    }
+
+    @Override
+    public void checkPaper(byte[] image, String teacherId, String paperId) throws IOException {
+        utilitsService.checkTeacher(teacherId);
+        Paper p = utilitsService.checkPaper(paperId);
+        utilitsService.checkCourseOwner(p.getAssignment().getCourse().getName(), teacherId);
+        if(deliveredPaperRepository.getAllByPaperOrderByDeliveredDate(p).get(deliveredPaperRepository.getAllByPaperOrderByDeliveredDate(p).size()-1).getStatus() != PaperStatus.DELIVERED)
+            throw new PaperNotCheckableException();
+        DeliveredPaper dp = new DeliveredPaper();
+        dp.setStatus(PaperStatus.CHECKED);
+        dp.setDeliveredDate(new Timestamp(System.currentTimeMillis()));
+        dp.setPaper(p);
+        String id;
+        do{
+            id = UUID.randomUUID().toString();
+        }while (deliveredPaperRepository.existsById(id));
+        dp.setId(id);
+        utilitsService.fromImageToPath(image, "/deliveredPapers/" + id);
+        deliveredPaperRepository.save(dp);
+        paperRepository.save(p);
+    }
 }

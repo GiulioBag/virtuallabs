@@ -18,7 +18,6 @@ public class Assignment {
     private String name;
     private Timestamp releaseDate;
     private Timestamp expireDate;
-    private String content;
 
     @ManyToOne
     @JoinColumn(name = "teacher_id")
@@ -30,15 +29,6 @@ public class Assignment {
 
     @OneToMany(mappedBy = "assignment")
     private List<Paper> papers = new ArrayList<>();
-
-    public Assignment(AssignmentDTO assignmentDTO){
-        id = assignmentDTO.getId();
-        name = assignmentDTO.getName();
-        releaseDate = assignmentDTO.getReleaseDate();
-        expireDate = assignmentDTO.getExpireDate();
-        //TODO: salvare l'immagine del DTO e memorizzare nel campo "vmImage" il path
-        content = null;
-    }
 
     // add/remove creator
     public void setCreator(Teacher t){

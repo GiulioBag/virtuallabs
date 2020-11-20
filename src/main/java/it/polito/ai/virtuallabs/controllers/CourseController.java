@@ -1,6 +1,7 @@
 package it.polito.ai.virtuallabs.controllers;
 
 import it.polito.ai.virtuallabs.dtos.*;
+import it.polito.ai.virtuallabs.exceptions.ImageException;
 import it.polito.ai.virtuallabs.exceptions.courseException.CourseNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotEnrolledToCourseException;
 import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotFoundException;
@@ -21,6 +22,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
 import java.util.Map;
@@ -355,7 +357,7 @@ public class CourseController {
     public void insertAssignment(Principal principal, @PathVariable(name = "courseName") String courseName, @RequestBody AssignmentDTO assignmentDTO){
         try{
             assignmentService.insertAssignment(assignmentDTO, courseName, principal.getName());
-        }catch(TeacherNotFoundException | CourseNotFoundException e){
+        }catch(TeacherNotFoundException | CourseNotFoundException | IOException | ImageException e){
             log.warning("insertAssignment: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }

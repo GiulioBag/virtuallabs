@@ -39,20 +39,9 @@ public class DeliveredPaper {
         this.paper = paper;
     }
 
-    public DeliveredPaper(DeliveredPaperDTO dp){
-        id = dp.getId();
-        status = dp.getStatus();
-        deliveredDate = dp.getDeliveredDate();
-        //TODO: salvare l'immagine del DTO e memorizzare nel campo "vmImage" il path
-        image = null;
-    }
-
-    private void setId(String id){
-        this.id = id;
-    }
-
     @PrePersist
     private void ensureId(){
-        this.setId(UUID.randomUUID().toString());
+        if(this.getId() != null)
+            this.setId(UUID.randomUUID().toString());
     }
 }

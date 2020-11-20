@@ -10,6 +10,5 @@ import java.util.List;
 @Repository
 public interface DeliveredPaperRepository  extends JpaRepository <DeliveredPaper, String> {
     List <DeliveredPaper> getAllByPaper(Paper paper);
-
     List <DeliveredPaper> getAllByPaperOrderByDeliveredDate(Paper paper);
 }

@@ -22,15 +22,6 @@ public class AssignmentDTO {
     private String name;
     private Timestamp releaseDate;
     private Timestamp expireDate;
-    private Byte[] content;
-
-    public AssignmentDTO(Assignment assignment){
-        id = assignment.getId();
-        name = assignment.getName();
-        releaseDate = assignment.getReleaseDate();
-        expireDate = assignment.getExpireDate();
-        //TODO: dal path recuperare il Byte Array corrispondente
-        content = null;
-    }
+    private byte[] content;
 
 }

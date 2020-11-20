@@ -2,11 +2,13 @@ package it.polito.ai.virtuallabs.controllers;
 
 import it.polito.ai.virtuallabs.dtos.DeliveredPaperDTO;
 import it.polito.ai.virtuallabs.dtos.StudentDTO;
+import it.polito.ai.virtuallabs.exceptions.ImageException;
 import it.polito.ai.virtuallabs.exceptions.assignmentExceptions.AssignmentNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.assignmentExceptions.ExpiredAssignmentException;
 import it.polito.ai.virtuallabs.exceptions.deliveredPaperException.MissFiledDeliveredPaperException;
 import it.polito.ai.virtuallabs.exceptions.deliveredPaperException.WrongStutusDeliveredPaperException;
 import it.polito.ai.virtuallabs.exceptions.paperExceptions.PaperNotChangeableException;
+import it.polito.ai.virtuallabs.exceptions.paperExceptions.PaperNotCheckableException;
 import it.polito.ai.virtuallabs.exceptions.paperExceptions.PaperNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotEnrolledToCourseException;
 import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotFoundException;
@@ -20,7 +22,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.security.Principal;
+import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -60,15 +64,42 @@ public class PaperController {
 
     @PostMapping("/{paperId}/delivery")
     @ResponseStatus(HttpStatus.OK)
-    public void insertDeliveredPaper(Principal principal, @PathVariable(name = "paperId") String paperId, @RequestBody DeliveredPaperDTO deliveredPaperDTO){
+    public void insertDeliveredPaper(Principal principal, @PathVariable(name = "paperId") String paperId, @RequestBody byte[] image){
         try{
-            assignmentService.insertPaper(deliveredPaperDTO, paperId, principal);
+            assignmentService.insertPaper(image, paperId, principal);
         }catch (StudentNotFoundException | PaperNotFoundException | MissFiledDeliveredPaperException | AssignmentNotFoundException e){
             log.warning("insertDeliveredPaper: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         }catch (ExpiredAssignmentException | PaperNotChangeableException | StudentNotEnrolledToCourseException | WrongStutusDeliveredPaperException e){
             log.warning("insertDeliveredPaper: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+    }
+
+    @GetMapping("/{paperId}/lastVersion")
+    public DeliveredPaperDTO getLastVersion(Principal principal, @PathVariable(name = "paperId") String paperId){
+        try{
+            return ModelHelper.enrich(assignmentService.getLastVersion(principal.getName(), paperId));
+        }catch (TeacherNotFoundException | PaperNotFoundException | IOException | ImageException e){
+            log.warning("getLastVersion: " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }catch(PermissionDeniedException e){
+            log.warning("getLastVersion: " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+        }
+    }
+
+    @PostMapping("/{paperId}/check")
+    @ResponseStatus(HttpStatus.OK)
+    public void checkPaper(@RequestBody byte[] image, @PathVariable(name = "paperId")String paperId, Principal principal){
+        try{
+            assignmentService.checkPaper(image, principal.getName(), paperId);
+        }catch (TeacherNotFoundException | PaperNotFoundException | IOException | ImageException e){
+            log.warning("getLastVersion: " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }catch(PermissionDeniedException | PaperNotCheckableException e){
+            log.warning("getLastVersion: " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
         }
     }
 }

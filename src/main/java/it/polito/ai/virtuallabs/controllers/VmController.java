@@ -1,6 +1,7 @@
 package it.polito.ai.virtuallabs.controllers;
 
 import it.polito.ai.virtuallabs.dtos.VMDTO;
+import it.polito.ai.virtuallabs.exceptions.ImageException;
 import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotBelongToTeam;
 import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotHasTeamInCourseException;
@@ -18,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
 
@@ -96,10 +98,10 @@ public class VmController {
     }
 
     @GetMapping(value = "/{vmId}/exec", produces = "image/png")
-    public @ResponseBody Byte[] execVM(Principal principal, @PathVariable(name = "vmId") String vmId){
+    public @ResponseBody byte[] execVM(Principal principal, @PathVariable(name = "vmId") String vmId){
         try{
             return vmService.execVM(vmId, principal);
-        }catch(TeacherNotFoundException | VmNotFoundException | StudentNotFoundException e){
+        }catch(TeacherNotFoundException | VmNotFoundException | StudentNotFoundException | IOException | ImageException e){
             log.warning("execVM: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }catch(PermissionDeniedException | StudentNotOwnVMException | VmCourseNotActive e){
