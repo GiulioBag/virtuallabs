@@ -1,22 +1,14 @@
 package it.polito.ai.virtuallabs.services;
 
-import com.fasterxml.jackson.annotation.OptBoolean;
-import it.polito.ai.virtuallabs.dtos.AssignmentDTO;
-import it.polito.ai.virtuallabs.dtos.DeliveredPaperDTO;
-import it.polito.ai.virtuallabs.dtos.PaperDTO;
-import it.polito.ai.virtuallabs.dtos.StudentDTO;
+import it.polito.ai.virtuallabs.dtos.*;
 import it.polito.ai.virtuallabs.entities.*;
 import it.polito.ai.virtuallabs.enums.PaperStatus;
 import it.polito.ai.virtuallabs.exceptions.assignmentExceptions.AssignmentNotFoundException;
-import it.polito.ai.virtuallabs.exceptions.assignmentExceptions.ExpiredAssignmentException;
 import it.polito.ai.virtuallabs.exceptions.courseException.CourseNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.deliveredPaperException.MissFiledDeliveredPaperException;
 import it.polito.ai.virtuallabs.exceptions.deliveredPaperException.WrongStutusDeliveredPaperException;
-import it.polito.ai.virtuallabs.exceptions.paperExceptions.NotChangeablePaperException;
 import it.polito.ai.virtuallabs.exceptions.paperExceptions.PaperNotCheckableException;
-import it.polito.ai.virtuallabs.exceptions.paperExceptions.PaperNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotEnrolledToCourseException;
-import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.teacherExceptions.PermissionDeniedException;
 import it.polito.ai.virtuallabs.exceptions.teacherExceptions.TeacherNotFoundException;
 import it.polito.ai.virtuallabs.repositories.*;
@@ -167,7 +159,7 @@ public class AssignmentServiceImpl implements AssignmentService{
 
     @Override
     @PreAuthorize("hasRole('STUDENT')")
-    public void insertPaper (byte[] image, String paperId, Principal principal){
+    public void insertPaper (ContentDTO contentDTO, String paperId, Principal principal) throws IOException {
 
         // check if the student exists
         Student student = utilitsService.checkStudent(principal.getName());
@@ -191,15 +183,19 @@ public class AssignmentServiceImpl implements AssignmentService{
 
         // check if the delivered paper is not already inserted
         List<DeliveredPaper> deliveredPapers = deliveredPaperRepository.getAllByPaperOrderByDeliveredDate(paper);
-        PaperStatus status = deliveredPapers.get(0).getStatus();
+        PaperStatus status = deliveredPapers.get(deliveredPapers.size()-1).getStatus();
         if(status.equals(PaperStatus.DELIVERED) || status.equals(PaperStatus.NULL)){
             throw new WrongStutusDeliveredPaperException();
         }
 
-        DeliveredPaper deliveredPaper = new DeliveredPaper(PaperStatus.DELIVERED, new Date().getTime(), null, paper);
+
+        DeliveredPaper deliveredPaper = new DeliveredPaper(PaperStatus.DELIVERED, new Date().getTime(), paper);
+        utilitsService.fromImageToPath(contentDTO.getImage(), "deliveredPapers/"+deliveredPaper.getId());
         paper.getDeliveredPapers().add(deliveredPaper);
-        paperRepository.save(paper);
         deliveredPaperRepository.save(deliveredPaper);
+        deliveredPaperRepository.flush();
+        paperRepository.save(paper);
+
     }
 
     Assignment fromDTOToEntity(AssignmentDTO dto) throws IOException {
@@ -236,7 +232,7 @@ public class AssignmentServiceImpl implements AssignmentService{
         dto.setDeliveredDate(dp.getDeliveredDate());
         dto.setStatus(dp.getStatus());
         if(dp.getStatus() == PaperStatus.CHECKED || dp.getStatus() == PaperStatus.DELIVERED)
-            dto.setImage(utilitsService.fromPathToImage("/deliveredPapers/" + dto.getId()));
+            dto.setImage(utilitsService.fromPathToImage("deliveredPapers/" + dto.getId()));
         else
             dto.setImage(null);
         return dto;
@@ -247,11 +243,11 @@ public class AssignmentServiceImpl implements AssignmentService{
         utilitsService.checkTeacher(teacherId);
         Paper p = utilitsService.checkPaper(paperId);
         utilitsService.checkCourseOwner(p.getAssignment().getCourse().getName(), teacherId);
-        return fromEntityToDTO(deliveredPaperRepository.getAllByPaperOrderByDeliveredDate(p).get(0));
+        return fromEntityToDTO(deliveredPaperRepository.getAllByPaperOrderByDeliveredDate(p).get(deliveredPaperRepository.getAllByPaperOrderByDeliveredDate(p).size()-1));
     }
 
     @Override
-    public void checkPaper(byte[] image, String teacherId, String paperId) throws IOException {
+    public void checkPaper(ContentDTO contentDTO, String teacherId, String paperId) throws IOException {
         utilitsService.checkTeacher(teacherId);
         Paper p = utilitsService.checkPaper(paperId);
         utilitsService.checkCourseOwner(p.getAssignment().getCourse().getName(), teacherId);
@@ -266,7 +262,7 @@ public class AssignmentServiceImpl implements AssignmentService{
             id = UUID.randomUUID().toString();
         }while (deliveredPaperRepository.existsById(id));
         dp.setId(id);
-        utilitsService.fromImageToPath(image, "/deliveredPapers/" + id);
+        utilitsService.fromImageToPath(contentDTO.getImage(), "/deliveredPapers/" + id);
         deliveredPaperRepository.save(dp);
         paperRepository.save(p);
     }

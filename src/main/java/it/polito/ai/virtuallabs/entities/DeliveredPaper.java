@@ -15,7 +15,6 @@ public class DeliveredPaper {
     private String id;
     private PaperStatus status;
     private Timestamp deliveredDate;
-    private String image;
 
     @ManyToOne
     @JoinColumn(name = "paper_id")
@@ -32,11 +31,11 @@ public class DeliveredPaper {
 
     public DeliveredPaper(){}
 
-    public DeliveredPaper(PaperStatus status, long time, String image, Paper paper){
+    public DeliveredPaper(PaperStatus status, long time, Paper paper){
         this.status = status;
         deliveredDate = new Timestamp(time);
-        this.image = image;
         this.paper = paper;
+        this.id = UUID.randomUUID().toString();
     }
 
     @PrePersist

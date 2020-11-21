@@ -576,8 +576,7 @@ public class CourseServiceImpl implements CourseService{
                 }
 
                 if(!readPaper){
-                    DeliveredPaper deliveredPaper = new DeliveredPaper(PaperStatus.READ, new Date().getTime(),
-                            null, paper);
+                    DeliveredPaper deliveredPaper = new DeliveredPaper(PaperStatus.READ, new Date().getTime(), paper);
                     paper.getDeliveredPapers().add(deliveredPaper);
                     paperRepository.save(paper);
                     deliveredPaperRepository.save(deliveredPaper);

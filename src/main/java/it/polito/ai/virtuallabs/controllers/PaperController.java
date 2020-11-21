@@ -1,6 +1,7 @@
 package it.polito.ai.virtuallabs.controllers;
 
 import it.polito.ai.virtuallabs.dtos.DeliveredPaperDTO;
+import it.polito.ai.virtuallabs.dtos.ContentDTO;
 import it.polito.ai.virtuallabs.dtos.StudentDTO;
 import it.polito.ai.virtuallabs.exceptions.ImageException;
 import it.polito.ai.virtuallabs.exceptions.assignmentExceptions.AssignmentNotFoundException;
@@ -17,16 +18,13 @@ import it.polito.ai.virtuallabs.exceptions.teacherExceptions.TeacherNotFoundExce
 import it.polito.ai.virtuallabs.services.AssignmentService;
 import lombok.extern.java.Log;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.expression.spel.ast.Assign;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.security.Principal;
-import java.util.Base64;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -65,14 +63,11 @@ public class PaperController {
 
     @PostMapping("/{paperId}/delivery")
     @ResponseStatus(HttpStatus.OK)
-    public void insertDeliveredPaper(Principal principal, @PathVariable(name = "paperId") String paperId, @RequestBody Map<String, String> input){
+    public void insertDeliveredPaper(Principal principal, @PathVariable(name = "paperId") String paperId, @RequestBody ContentDTO contentDTO){
         try{
-            if(input.containsKey("image")) {
-                assignmentService.insertPaper(input.get("image").getBytes(), paperId, principal);
-            }else{
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
-            }
-        }catch (StudentNotFoundException | PaperNotFoundException | MissFiledDeliveredPaperException | AssignmentNotFoundException e){
+            assignmentService.insertPaper(contentDTO, paperId, principal);
+        }catch (StudentNotFoundException | PaperNotFoundException | MissFiledDeliveredPaperException
+                | AssignmentNotFoundException | IOException | ImageException e){
             log.warning("insertDeliveredPaper: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }catch (ExpiredAssignmentException | PaperNotChangeableException | StudentNotEnrolledToCourseException | WrongStutusDeliveredPaperException e){
@@ -96,14 +91,14 @@ public class PaperController {
 
     @PostMapping("/{paperId}/check")
     @ResponseStatus(HttpStatus.OK)
-    public void checkPaper(@RequestBody byte[] image, @PathVariable(name = "paperId")String paperId, Principal principal){
+    public void checkPaper(@RequestBody ContentDTO contentDTO, @PathVariable(name = "paperId")String paperId, Principal principal){
         try{
-            assignmentService.checkPaper(image, principal.getName(), paperId);
+            assignmentService.checkPaper(contentDTO, principal.getName(), paperId);
         }catch (TeacherNotFoundException | PaperNotFoundException | IOException | ImageException e){
-            log.warning("getLastVersion: " + e.getMessage());
+            log.warning("checkPaper: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }catch(PermissionDeniedException | PaperNotCheckableException e){
-            log.warning("getLastVersion: " + e.getMessage());
+            log.warning("checkPaper: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
         }
     }

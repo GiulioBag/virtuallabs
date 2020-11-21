@@ -1,10 +1,6 @@
 package it.polito.ai.virtuallabs.services;
 
-import it.polito.ai.virtuallabs.dtos.AssignmentDTO;
-import it.polito.ai.virtuallabs.dtos.DeliveredPaperDTO;
-import it.polito.ai.virtuallabs.dtos.PaperDTO;
-import it.polito.ai.virtuallabs.dtos.StudentDTO;
-import it.polito.ai.virtuallabs.entities.Teacher;
+import it.polito.ai.virtuallabs.dtos.*;
 
 import java.io.IOException;
 import java.security.Principal;
@@ -15,7 +11,7 @@ public interface AssignmentService {
     StudentDTO getStudentByPaper(String teacherId, String paperId) throws IOException;
     List<DeliveredPaperDTO> getHistoryByPaper(String paperId, String teacherId);
     void insertAssignment(AssignmentDTO assignmentDTO, String courseName, String teacherId) throws IOException;
-    void insertPaper (byte[] image, String paperId, Principal principal);
+    void insertPaper (ContentDTO contentDTO, String paperId, Principal principal) throws IOException;
     DeliveredPaperDTO getLastVersion(String teacherId, String paperId) throws IOException;
-    void checkPaper(byte[] image, String teacherId, String paperId) throws IOException;
+    void checkPaper(ContentDTO contentDTO, String teacherId, String paperId) throws IOException;
 }
