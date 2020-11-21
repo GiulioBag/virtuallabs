@@ -5,7 +5,6 @@ import org.springframework.hateoas.Link;
 
 public class ModelHelper {
     public static CourseDTO enrich(CourseDTO courseDTO){
-        courseDTO.add(new Link("http://localhost:8080/API/courses/" + courseDTO.getName()));
         courseDTO.add(new Link("http://localhost:8080/API/courses/" + courseDTO.getName() + "/students").withRel("enrolled"));
         courseDTO.add(new Link("http://localhost:8080/API/courses/" + courseDTO.getName() + "/vmmodel").withRel("vmModel"));
         courseDTO.add(new Link("http://localhost:8080/API/courses/" + courseDTO.getName() + "/assignments").withRel("assignments"));

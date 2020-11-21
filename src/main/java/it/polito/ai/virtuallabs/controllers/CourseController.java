@@ -3,6 +3,7 @@ package it.polito.ai.virtuallabs.controllers;
 import it.polito.ai.virtuallabs.dtos.*;
 import it.polito.ai.virtuallabs.exceptions.ImageException;
 import it.polito.ai.virtuallabs.exceptions.courseException.CourseNotFoundException;
+import it.polito.ai.virtuallabs.exceptions.courseException.GroupSizeException;
 import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotEnrolledToCourseException;
 import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotHasTeamInCourseException;
@@ -59,7 +60,7 @@ public class CourseController {
             if(courseService.addCourse(dto, principal.getName())) {
                 return ModelHelper.enrich(dto);
             }
-        }catch(TeacherNotFoundException e){
+        }catch(TeacherNotFoundException | GroupSizeException e){
             log.warning("addCourse: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
@@ -90,7 +91,7 @@ public class CourseController {
             courseService.deleteCourse(courseName, principal.getName());
         }catch (TeacherNotFoundException | CourseNotFoundException e){
             log.warning("deleteCourse: " + e.getMessage());
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }catch (PermissionDeniedException e) {
             log.warning("deleteCourse: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
@@ -140,9 +141,10 @@ public class CourseController {
     public void enrollOne(Principal principal, @PathVariable(name = "courseName") String courseName, @RequestBody Map<String, String> input){
         try{
             if(input.containsKey("studentId")){
-                if(!courseService.enrollOneStudent(courseName, input.get("studentId"), principal.getName()))
+                if(!courseService.enrollOneStudent(courseName, input.get("studentId"), principal.getName())) {
                     log.warning("enrollOne: student already enrolled");
                     throw new ResponseStatusException(HttpStatus.CONFLICT, "Student already enrolled");
+                }
             }else{
                 log.warning("enrollOne: wrong message received");
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Wrong message received");
@@ -160,11 +162,11 @@ public class CourseController {
     public List<Boolean> enrollMany(Principal principal, @PathVariable(name = "courseName") String courseName, @RequestBody Map<String, List<String>> input){
         try {
             if (input.containsKey("studentIds"))
-                return courseService.enrollManyStudents(courseName, input.get("studentsIds"), principal.getName());
+                return courseService.enrollManyStudents(courseName, input.get("studentIds"), principal.getName());
             else {
                 log.warning("enrollMany: wrong message received");
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Wrong message received");
             }
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Wrong message received");
         } catch (StudentNotFoundException | TeacherNotFoundException | CourseNotFoundException e) {
             log.warning("enrollMany: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
@@ -175,12 +177,14 @@ public class CourseController {
     }
 
     @PostMapping("/{courseName}/disenrollOne")
+    @ResponseStatus(HttpStatus.OK)
     public void disenrollOne(Principal principal, @PathVariable(name = "courseName") String courseName, @RequestBody Map<String, String> input){
         try{
             if(input.containsKey("studentId")){
-                if(!courseService.disenrollOneStudent(courseName, input.get("studentId"), principal.getName()))
+                if(!courseService.disenrollOneStudent(courseName, input.get("studentId"), principal.getName())) {
                     log.warning("disenrollOne: student already enrolled");
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Student already enrolled");
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "Student not enrolled");
+                }
             }else{
                 log.warning("disenrollOne: wrong message received");
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Wrong message received");
@@ -198,7 +202,7 @@ public class CourseController {
     public List<Boolean> disenrollMany(Principal principal, @PathVariable(name = "courseName") String courseName, @RequestBody Map<String, List<String>> input){
             try {
                 if (input.containsKey("studentIds"))
-                    return courseService.disenrollManyStudents(courseName, input.get("studentsIds"), principal.getName());
+                    return courseService.disenrollManyStudents(courseName, input.get("studentIds"), principal.getName());
                 else {
                     log.warning("disenrollMany: wrong message received");
                 }

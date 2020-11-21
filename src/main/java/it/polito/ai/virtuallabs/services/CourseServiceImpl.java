@@ -6,6 +6,7 @@ import it.polito.ai.virtuallabs.enums.PaperStatus;
 import it.polito.ai.virtuallabs.enums.VmState;
 import it.polito.ai.virtuallabs.exceptions.ImageException;
 import it.polito.ai.virtuallabs.exceptions.courseException.CourseNotFoundException;
+import it.polito.ai.virtuallabs.exceptions.courseException.GroupSizeException;
 import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotEnrolledToCourseException;
 import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotHasTeamInCourseException;
@@ -150,6 +151,7 @@ public class CourseServiceImpl implements CourseService{
     }
 
     @Override
+    @PreAuthorize("hasRole('TEACHER')")
     public List<TeamDTO> getTeamsByCourse(String courseName, String teacherId) {
         if(!teacherRepository.existsById(teacherId))
             throw new TeacherNotFoundException(teacherId);
@@ -176,11 +178,14 @@ public class CourseServiceImpl implements CourseService{
     }
 
     @Override
+    @PreAuthorize("hasRole('TEACHER')")
     public boolean addCourse(CourseDTO course, String teacherId) {
         if(!teacherRepository.existsById(teacherId))
             throw new TeacherNotFoundException(teacherId);
         if(courseRepository.existsById(course.getName()))
             return false;
+        if(course.getMinGroupSize() > course.getMaxGroupSize() || course.getMinGroupSize() < 0)
+            throw new GroupSizeException();
         Course c = modelMapper.map(course, Course.class);
         Teacher t = teacherRepository.getOne(teacherId);
         c.addTeacher(t);
@@ -203,33 +208,40 @@ public class CourseServiceImpl implements CourseService{
         List<CourseDTO> courses = teacherService.getCoursesByTeacher(teacherId);
         System.out.println(courseName);
         for (CourseDTO oldCourse : courses){
-            System.out.println("LOOP");
-            System.out.println(oldCourse.getName());
             if(oldCourse.getName().equals(courseName)){
-                System.out.println("ENTER");
                 Course c = courseRepository.getOne(courseName);
-                Course newCourse = modelMapper.map(courseDTO, Course.class);
-                for (Teacher t : c.getOwners()) {
-                    newCourse.addTeacher(t);
-                    t.getCourses().remove(c);
-                    teacherRepository.save(t);
+
+                if(courseName.equals(courseDTO.getName())){
+                    c.setAcronym(courseDTO.getAcronym());
+                    c.setStatus(courseDTO.isStatus());
+                    c.setMaxGroupSize(courseDTO.getMaxGroupSize());
+                    c.setMinGroupSize(courseDTO.getMinGroupSize());
+                    courseRepository.save(c);
+                    return true;
+                }else{
+                    Course newCourse = modelMapper.map(courseDTO, Course.class);
+                    courseRepository.save(newCourse);
+                    for (Teacher t : c.getOwners()) {
+                        newCourse.addTeacher(t);
+                        t.getCourses().remove(c);
+                        teacherRepository.save(t);
+                    }
+                    for (Student s : c.getStudents()) {
+                        newCourse.addStudent(s);
+                        s.getCourses().remove(c);
+                        studentRepository.save(s);
+                    }
+                    for (Team t : c.getTeams()) {
+                        newCourse.addTeam(t);
+                        teamRepository.save(t);
+                    }
+                    for(Assignment a : c.getAssignments()){
+                        a.setCourse(newCourse);
+                        assignmentRepository.save(a);
+                    }
+                    courseRepository.deleteById(courseName);
+                    return true;
                 }
-                for (Student s : c.getStudents()) {
-                    newCourse.addStudent(s);
-                    s.getCourses().remove(c);
-                    studentRepository.save(s);
-                }
-                for (Team t : c.getTeams()) {
-                    newCourse.addTeam(t);
-                    teamRepository.save(t);
-                }
-                for(Assignment a : c.getAssignments()){
-                    a.setCourse(newCourse);
-                    assignmentRepository.save(a);
-                }
-                courseRepository.deleteById(courseName);
-                courseRepository.save(newCourse);
-                return true;
             }
         }
         throw new PermissionDeniedException();
@@ -261,6 +273,7 @@ public class CourseServiceImpl implements CourseService{
                     assignmentRepository.delete(a);
                 }
                 courseRepository.deleteById(courseName);
+                return;
             }
         }
         throw new PermissionDeniedException();
@@ -342,29 +355,17 @@ public class CourseServiceImpl implements CourseService{
 
     @Override
     public boolean enrollOneStudent(String courseName, String studentId, String teacherId) {
-        if(!studentRepository.existsById(studentId))
-            throw new StudentNotFoundException(studentId);
-        if(!courseRepository.existsById(courseName))
-            throw new CourseNotFoundException(courseName);
-        if(!teacherRepository.existsById(teacherId))
-            throw new TeacherNotFoundException(teacherId);
+        Student student = utilitsService.checkStudent(studentId);
+        utilitsService.checkCourse(courseName);
+        utilitsService.checkTeacher(teacherId);
+        Course course = utilitsService.checkCourseOwner(courseName, teacherId);
 
-        List<CourseDTO> courses = teacherService.getCoursesByTeacher(teacherId);
-        for (CourseDTO c : courses) {
-            if (c.getName().equals(courseName)) {
-                Student student = studentRepository.getOne(studentId);
-                Course course = courseRepository.getOne(courseName);
-                List<Student> students = course.getStudents();
-                for (Student s : students) {
-                    if (s.getId().equals(studentId)) {
-                        return false;
-                    }
-                }
-                course.addStudent(student);
-                return true;
-            }
+        List<Student> students = course.getStudents();
+        if (students.contains(student)) {
+            return false;
         }
-        throw new PermissionDeniedException();
+        course.addStudent(student);
+        return true;
     }
 
     @Override
@@ -374,19 +375,16 @@ public class CourseServiceImpl implements CourseService{
 
     @Override
     public boolean disenrollOneStudent(String courseName, String studentId, String teacherId) {
-        if(!teacherRepository.existsById(teacherId))
-            throw new TeacherNotFoundException(teacherId);
-        if(!courseRepository.existsById(courseName))
-            throw new CourseNotFoundException(courseName);
-        if(!studentRepository.existsById(studentId))
-            throw new StudentNotFoundException(studentId);
+        Student student = utilitsService.checkStudent(studentId);
+        utilitsService.checkCourse(courseName);
+        utilitsService.checkTeacher(teacherId);
+        Course course = utilitsService.checkCourseOwner(courseName, teacherId);
 
-        List<Student> students = courseRepository.getOne(courseName).getStudents();
-        for (Student s : students)
-            if(s.getId().equals(studentId)) {
-                s.removeCourse(courseRepository.getOne(courseName));
-                return true;
-            }
+        List<Student> students = course.getStudents();
+        if (students.contains(student)){
+            student.removeCourse(course);
+            return true;
+        }
         //return false if the student is not enrolled in this course
         return false;
     }
