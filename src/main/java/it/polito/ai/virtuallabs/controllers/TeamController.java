@@ -4,6 +4,7 @@ package it.polito.ai.virtuallabs.controllers;
 import it.polito.ai.virtuallabs.dtos.ProposedTeamDTO;
 import it.polito.ai.virtuallabs.dtos.StudentDTO;
 import it.polito.ai.virtuallabs.dtos.VMDTO;
+import it.polito.ai.virtuallabs.exceptions.ImageException;
 import it.polito.ai.virtuallabs.exceptions.MyException;
 import it.polito.ai.virtuallabs.exceptions.studentException.*;
 import it.polito.ai.virtuallabs.exceptions.teacherExceptions.PermissionDeniedException;
@@ -18,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
 
@@ -39,13 +41,13 @@ public class TeamController {
             }
             return studentDTOList;
 
-        } catch (StudentNotFoundException | TeamNotFoundException e) {
+        } catch (StudentNotFoundException | TeamNotFoundException | IOException | ImageException e) {
             log.warning("getTeamStudentByTeam " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         } catch (TeamExpiredException  e) {
             log.warning("getTeamStudentByTeam " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
-        } catch (StudentNotEnrolledToCourseException | StudentNotBelongToTeam e) {
+        } catch (StudentNotEnrolledToCourseException | StudentNotBelongToTeam  e) {
             log.warning("getTeamStudentByTeam " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
         }

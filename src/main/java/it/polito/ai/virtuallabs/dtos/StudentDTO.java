@@ -13,6 +13,6 @@ public class StudentDTO extends RepresentationModel<StudentDTO> {
     private String name;
     private String lastName;
     private String serialNumber;
-    private Byte[] photo;
+    private byte[] photo;
 
 }

@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.security.Principal;
 import java.sql.Timestamp;
 import java.util.*;
@@ -43,7 +44,7 @@ public class TeamServiceImpl implements  TeamService {
 
     @Override
     @PreAuthorize("hasRole('STUDENT')")
-    public List<StudentDTO> getTeamStudentByTeam(String teamId, Principal principal) {
+    public List<StudentDTO> getTeamStudentByTeam(String teamId, Principal principal) throws IOException {
 
         // check if team exists
         Team team = utilitsService.checkTeam(teamId);
@@ -60,7 +61,7 @@ public class TeamServiceImpl implements  TeamService {
         List<StudentDTO> studentDTOList = new ArrayList<>();
 
         for (Student teamStudent : team.getStudents()) {
-            studentDTOList.add(new StudentDTO(teamStudent));
+            studentDTOList.add(utilitsService.fromStudentEntityToDTO(teamStudent));
         }
 
         return studentDTOList;
@@ -242,6 +243,9 @@ public class TeamServiceImpl implements  TeamService {
 
         return team.getVMs().stream().map(i -> modelMapper.map(i, VMDTO.class)).collect(Collectors.toList());
     }
+
+
+
 
 
 

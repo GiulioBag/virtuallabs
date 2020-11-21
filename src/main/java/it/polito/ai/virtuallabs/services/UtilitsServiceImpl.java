@@ -1,6 +1,7 @@
 package it.polito.ai.virtuallabs.services;
 
 import com.zaxxer.hikari.pool.HikariProxyCallableStatement;
+import it.polito.ai.virtuallabs.dtos.StudentDTO;
 import it.polito.ai.virtuallabs.dtos.VMDTO;
 import it.polito.ai.virtuallabs.entities.*;
 import it.polito.ai.virtuallabs.exceptions.ImageException;
@@ -343,5 +344,17 @@ public class UtilitsServiceImpl implements UtilitsService {
         ByteArrayOutputStream bao = new ByteArrayOutputStream();
         ImageIO.write(img, "jpg", bao);
         return bao.toByteArray();
+    }
+
+    @Override
+    public StudentDTO fromStudentEntityToDTO (Student student) throws IOException {
+        StudentDTO studentDTO = new StudentDTO();
+        studentDTO.setId(student.getId());
+        studentDTO.setEmail(student.getUser().getEmail());
+        studentDTO.setLastName(student.getUser().getLastName());
+        studentDTO.setName(student.getUser().getName());
+        studentDTO.setSerialNumber(student.getUser().getSerialNumber());
+        studentDTO.setPhoto(fromPathToImage("/users/" + studentDTO.getSerialNumber()));
+        return studentDTO;
     }
 }

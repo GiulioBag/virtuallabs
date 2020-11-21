@@ -2,6 +2,7 @@ package it.polito.ai.virtuallabs.services;
 
 import it.polito.ai.virtuallabs.dtos.*;
 
+import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
@@ -9,7 +10,7 @@ import java.util.Optional;
 public interface CourseService {
 
     List<TeamDTO> getProposedTeamByCourse(String courseName, Principal principal);
-    List<StudentDTO> possibleTeamMember(String courseName, Principal principal);
+    List<StudentDTO> possibleTeamMember(String courseName, Principal principal) throws IOException;
 
     Optional<TeamDTO> getTeamByCourse(String courseName, Principal principal);
     List<TeamDTO> getTeamsByCourse(String courseName, String teacherId);

@@ -127,7 +127,7 @@ public class CourseController {
                 ModelHelper.enrich(studentDTO);
             }
             return courseDTOS;
-        }catch (CourseNotFoundException | TeacherNotFoundException | StudentNotFoundException e){
+        }catch (CourseNotFoundException | TeacherNotFoundException | StudentNotFoundException | ImageException e){
             log.warning("getStudentsByCourse: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         } catch (PermissionDeniedException | StudentNotEnrolledToCourseException e){
@@ -305,7 +305,7 @@ public class CourseController {
             }
             return studentDTOList;
 
-        } catch (CourseNotFoundException  e ){
+        } catch (CourseNotFoundException | IOException e ){
             log.warning("possibleTeamMembers: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }catch (StudentNotEnrolledToCourseException e ){

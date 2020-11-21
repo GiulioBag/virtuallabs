@@ -1,5 +1,6 @@
 package it.polito.ai.virtuallabs.services;
 
+import it.polito.ai.virtuallabs.dtos.StudentDTO;
 import it.polito.ai.virtuallabs.dtos.VMDTO;
 import it.polito.ai.virtuallabs.entities.*;
 
@@ -10,6 +11,7 @@ public interface UtilitsService {
 
     // STUDENT
     Student checkStudent(String studentId);
+    StudentDTO fromStudentEntityToDTO(Student student) throws IOException ;
 
     // TEAM
     Team checkTeam (String teamId);

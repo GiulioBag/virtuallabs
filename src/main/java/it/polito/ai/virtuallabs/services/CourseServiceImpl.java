@@ -4,6 +4,7 @@ import it.polito.ai.virtuallabs.dtos.*;
 import it.polito.ai.virtuallabs.entities.*;
 import it.polito.ai.virtuallabs.enums.PaperStatus;
 import it.polito.ai.virtuallabs.enums.VmState;
+import it.polito.ai.virtuallabs.exceptions.ImageException;
 import it.polito.ai.virtuallabs.exceptions.courseException.CourseNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotEnrolledToCourseException;
 import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotFoundException;
@@ -18,6 +19,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
+import java.io.IOException;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Date;
@@ -91,7 +93,7 @@ public class CourseServiceImpl implements CourseService{
 
     @Override
     @PreAuthorize("hasRole('STUDENT')")
-    public List<StudentDTO> possibleTeamMember(String courseName, Principal principal) {
+    public List<StudentDTO> possibleTeamMember(String courseName, Principal principal) throws IOException {
 
         // check if the course exist
         Optional<Course> optCourse = courseRepository.findByName(courseName);
@@ -108,7 +110,7 @@ public class CourseServiceImpl implements CourseService{
 
         List<StudentDTO> returnStudentsDTO = new ArrayList<>();
         for (Student auxStudent : courseRepository.getStudentsNotInTeams(courseName)) {
-            returnStudentsDTO.add(new StudentDTO(auxStudent));
+            returnStudentsDTO.add(utilitsService.fromStudentEntityToDTO(auxStudent));
         }
 
         return returnStudentsDTO;
@@ -327,7 +329,13 @@ public class CourseServiceImpl implements CourseService{
 
         return course.getStudents()
                 .stream()
-                .map(i -> modelMapper.map(i, StudentDTO.class))
+                .map(i -> {
+                    try {
+                        return utilitsService.fromStudentEntityToDTO(i);
+                    } catch (IOException e) {
+                        throw new ImageException(i.getId());
+                    }
+                })
                 .collect(Collectors.toList());
 
     }
