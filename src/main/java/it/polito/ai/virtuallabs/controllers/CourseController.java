@@ -2,13 +2,21 @@ package it.polito.ai.virtuallabs.controllers;
 
 import it.polito.ai.virtuallabs.dtos.*;
 import it.polito.ai.virtuallabs.exceptions.ImageException;
+import it.polito.ai.virtuallabs.exceptions.MyException;
 import it.polito.ai.virtuallabs.exceptions.courseException.CourseNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.courseException.GroupSizeException;
+import it.polito.ai.virtuallabs.exceptions.studentException.StudentAlreadyInTeamException;
 import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotEnrolledToCourseException;
 import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotHasTeamInCourseException;
 import it.polito.ai.virtuallabs.exceptions.teacherExceptions.PermissionDeniedException;
 import it.polito.ai.virtuallabs.exceptions.teacherExceptions.TeacherNotFoundException;
+import it.polito.ai.virtuallabs.exceptions.teamException.TeamAlreadyExistException;
+import it.polito.ai.virtuallabs.exceptions.teamException.TeamExpiredException;
+import it.polito.ai.virtuallabs.exceptions.teamException.TeamNotActivedException;
+import it.polito.ai.virtuallabs.exceptions.vmException.MaxVmException;
+import it.polito.ai.virtuallabs.exceptions.vmException.ReachedMaximumTotalValueException;
+import it.polito.ai.virtuallabs.exceptions.vmException.VmParameterException;
 import it.polito.ai.virtuallabs.exceptions.vmModelExceptions.VMModelExcessiveLimitsException;
 import it.polito.ai.virtuallabs.services.AssignmentService;
 import it.polito.ai.virtuallabs.services.CourseService;
@@ -39,6 +47,10 @@ public class CourseController {
     CourseService courseService;
     @Autowired
     AssignmentService assignmentService;
+    @Autowired
+    TeamService teamService;
+    @Autowired
+    VMService vmService;
 
     @GetMapping({"", "/"})
     public List<CourseDTO> getCourses (){
@@ -217,7 +229,7 @@ public class CourseController {
     }
 
     @GetMapping("/{courseName}/vmmodel")
-    public VMModelDTO getVMModel(Principal principal, @PathVariable(name = "courseName") String courseName){
+    public Optional<VMModelDTO> getVMModel(Principal principal, @PathVariable(name = "courseName") String courseName){
         try{
             return courseService.getVMModel(courseName, principal.getName());
         }catch(CourseNotFoundException | TeacherNotFoundException e){
@@ -271,6 +283,24 @@ public class CourseController {
         }
     }
 
+    @PostMapping("/{courseName}/proposeTeam")
+    @ResponseStatus(HttpStatus.OK)
+    public void newTeam(@RequestBody ProposedTeamDTO proposedTeamDTO, @PathVariable(name = "courseName") String courseName, Principal principal) {
+        try {
+            teamService.proposeTeam(proposedTeamDTO, courseName, principal);
+
+        } catch (TeamAlreadyExistException | StudentAlreadyInTeamException e) {
+            log.warning("newTeam: " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
+        } catch (StudentNotEnrolledToCourseException | StudentNotHasTeamInCourseException e) {
+            log.warning("newTeam: " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+        }catch (MyException e) {
+            log.warning("newTeam: " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
+
     @GetMapping("/{courseName}/team")
     public Optional<TeamDTO> getTeamByCourse(@PathVariable (name = "courseName") String courseName, Principal principal){
         try {
@@ -300,7 +330,7 @@ public class CourseController {
         }
     }
 
-    @GetMapping("/{courseName}/freestudents")
+    @GetMapping("/{courseName}/freeStudents")
     public List<StudentDTO> possibleTeamMembers(@PathVariable (name = "courseName") String courseName, Principal principal){
         try {
             List<StudentDTO> studentDTOList = courseService.possibleTeamMember(courseName, principal);
@@ -312,7 +342,7 @@ public class CourseController {
         } catch (CourseNotFoundException | IOException e ){
             log.warning("possibleTeamMembers: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-        }catch (StudentNotEnrolledToCourseException e ){
+        }catch (StudentNotEnrolledToCourseException | StudentAlreadyInTeamException e ){
             log.warning("possibleTeamMembers: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
         }
@@ -334,6 +364,27 @@ public class CourseController {
             log.warning("proposedTeamByCourse: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
         }
+    }
+
+    // Only student
+    @PostMapping("/{courseName}/createVM")
+    @ResponseStatus(HttpStatus.OK)
+    public void vmCreate(@PathVariable (name = "courseName") String courseId, @RequestBody VMDTO vmdto,
+                         Principal principal){
+        try{
+            vmService.createVM(vmdto, courseId, principal);
+        } catch ( StudentNotHasTeamInCourseException | StudentNotFoundException | VmParameterException |
+                TeamExpiredException e){
+            log.warning("vmCreate: " + e.getClass());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (MaxVmException | ReachedMaximumTotalValueException e){
+            log.warning("vmCreate: " + e.getClass());
+            throw  new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
+        } catch (TeamNotActivedException e){
+            log.warning("vmCreate: " + e.getClass());
+            throw  new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+        }
+
     }
 
     @GetMapping("/{courseName}/vms")
@@ -367,7 +418,7 @@ public class CourseController {
         }
     }
 
-    @PostMapping("/{courseName}/assignments")
+    @GetMapping("/{courseName}/assignments")
     public List<AssignmentDTO> getAssignmentsByCourse(Principal principal, @PathVariable(name = "courseName") String courseName){
         try{
             return courseService.getAssignmentsByCourse(principal, courseName).stream().map(ModelHelper::enrich).collect(Collectors.toList());

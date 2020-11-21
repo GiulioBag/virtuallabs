@@ -34,7 +34,7 @@ public interface CourseService {
 
     // - VM Model management
     void setVMModel(VMModelDTO vmModelDTO, String courseName, String teacherId);
-    VMModelDTO getVMModel(String courseName, String teacherId);
+    Optional<VMModelDTO> getVMModel(String courseName, String teacherId);
 
     // vm
     List<VMDTO> getVMSByCourse(String courseName, Principal principal);

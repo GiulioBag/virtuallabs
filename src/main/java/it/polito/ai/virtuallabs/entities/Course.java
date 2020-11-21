@@ -29,7 +29,7 @@ public class Course {
     private List<Assignment> assignments = new ArrayList<>();
 
     @OneToOne(mappedBy = "course")
-    private VMModel vmModel;
+    private VMModel vmModel = null;
 
     // add/remove students from list
     public void addStudent(Student student){
@@ -65,6 +65,11 @@ public class Course {
 
     public void removeAssignment(Assignment assignment){
         assignment.setCourse(null);
+    }
+
+    public void changeVMModel(VMModel vmModel){
+        this.vmModel = vmModel;
+        vmModel.setCourse(this);
     }
 
 }

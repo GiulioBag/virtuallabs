@@ -7,6 +7,7 @@ import it.polito.ai.virtuallabs.enums.VmState;
 import it.polito.ai.virtuallabs.exceptions.ImageException;
 import it.polito.ai.virtuallabs.exceptions.courseException.CourseNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.courseException.GroupSizeException;
+import it.polito.ai.virtuallabs.exceptions.studentException.StudentAlreadyInTeamException;
 import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotEnrolledToCourseException;
 import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotHasTeamInCourseException;
@@ -109,13 +110,18 @@ public class CourseServiceImpl implements CourseService{
             throw new StudentNotEnrolledToCourseException(student.getId(), courseName);
         }
 
+        //check if the student is already in a team of this course
+        for (Team t : student.getTeams()) {
+            if(t.getCourse().equals(course))
+                throw new StudentAlreadyInTeamException(principal.getName(), courseName);
+        }
+
         List<StudentDTO> returnStudentsDTO = new ArrayList<>();
         for (Student auxStudent : courseRepository.getStudentsNotInTeams(courseName)) {
             returnStudentsDTO.add(utilitsService.fromStudentEntityToDTO(auxStudent));
         }
 
-        return returnStudentsDTO;
-
+        return returnStudentsDTO.stream().filter(i -> !i.getId().equals(student.getId())).collect(Collectors.toList());
     }
 
     @Override
@@ -428,11 +434,13 @@ public class CourseServiceImpl implements CourseService{
                 }else{
                     VMModel vmModel = modelMapper.map(vmModelDTO, VMModel.class);
                     Course course = courseRepository.getOne(courseName);
-                    course.setVmModel(vmModel);
-                    if(vmModelRepository.existsById(vmModel.getId()))
-                        vmModelRepository.deleteById(vmModel.getId());
+                    if(vmModelRepository.findByCourse(course).isPresent()) {
+                        vmModel.setId(course.getVmModel().getId());
+                    }
+                    course.changeVMModel(vmModel);
                     courseRepository.save(course);
                     vmModelRepository.save(vmModel);
+                    return;
                 }
             }
         }
@@ -440,7 +448,7 @@ public class CourseServiceImpl implements CourseService{
     }
 
     @Override
-    public VMModelDTO getVMModel(String courseName, String teacherId) {
+    public Optional<VMModelDTO> getVMModel(String courseName, String teacherId) {
         if(!teacherRepository.existsById(teacherId))
             throw new TeacherNotFoundException(teacherId);
         if(!courseRepository.existsById(courseName))
@@ -449,7 +457,11 @@ public class CourseServiceImpl implements CourseService{
         List<CourseDTO> courses = teacherService.getCoursesByTeacher(teacherId);
         for (CourseDTO c : courses) {
             if (c.getName().equals(courseName)) {
-                return modelMapper.map(courseRepository.getOne(courseName).getVmModel(), VMModelDTO.class);
+                VMModel vmModel = courseRepository.getOne(courseName).getVmModel();
+                if(vmModel == null)
+                    return Optional.empty();
+                else
+                    return Optional.of(modelMapper.map(vmModel, VMModelDTO.class));
             }
         }
         throw new PermissionDeniedException();
@@ -521,7 +533,14 @@ public class CourseServiceImpl implements CourseService{
                 if (c.getName().equals(courseName)) {
                     return c.getAssignments()
                             .stream()
-                            .map(i -> modelMapper.map(i, AssignmentDTO.class))
+                            .map(i -> {
+                                try {
+                                    return fromEntityToDTO(i);
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                                return null;
+                            })
                             .collect(Collectors.toList());
                 }
             }
@@ -564,12 +583,28 @@ public class CourseServiceImpl implements CourseService{
                     deliveredPaperRepository.save(deliveredPaper);
                 }
             }
-
             return assignments
                     .stream()
-                    .map(assignment -> modelMapper.map(assignment, AssignmentDTO.class))
+                    .map(assignment -> {
+                        try {
+                            return fromEntityToDTO(assignment);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        return null;
+                    })
                     .collect(Collectors.toList());
-
         }
     }
+
+    AssignmentDTO fromEntityToDTO(Assignment a) throws IOException {
+        AssignmentDTO dto = new AssignmentDTO();
+        dto.setId(a.getId());
+        dto.setName(a.getName());
+        dto.setExpireDate(a.getExpireDate());
+        dto.setReleaseDate(a.getReleaseDate());
+        dto.setContent(utilitsService.fromPathToImage("/assignments/" + a.getId()));
+        return dto;
+    }
+
 }

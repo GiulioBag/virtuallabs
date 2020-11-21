@@ -9,7 +9,7 @@ import lombok.EqualsAndHashCode;
 public class VMModelDTO {
 
     private String id;
-    private String OS;
+    private String os;
     private String version;
     private int vcpu;
     private int space;

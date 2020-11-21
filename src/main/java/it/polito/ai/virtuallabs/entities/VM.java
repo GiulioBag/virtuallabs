@@ -38,7 +38,7 @@ public class VM {
 
     @PrePersist
     private void ensureId(){
-        this.setId(UUID.randomUUID().toString());
+        if (id == null)
+            this.setId(UUID.randomUUID().toString());
     }
-
 }

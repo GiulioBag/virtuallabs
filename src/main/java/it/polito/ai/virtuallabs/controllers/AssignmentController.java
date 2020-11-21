@@ -27,7 +27,7 @@ public class AssignmentController {
     AssignmentService assignmentService;
 
     @GetMapping("/{assignmentId}/papers")
-    public List<PaperDTO> getPapersByAssignment(Principal principal, @PathVariable(name = "AssignmentId") String assignmentId){
+    public List<PaperDTO> getPapersByAssignment(Principal principal, @PathVariable(name = "assignmentId") String assignmentId){
         try{
             return assignmentService.getPapersByAssignment(principal, assignmentId).stream().map(ModelHelper::enrich).collect(Collectors.toList());
         }catch(AssignmentNotFoundException | TeacherNotFoundException | StudentNotFoundException e){

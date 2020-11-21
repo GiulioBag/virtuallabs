@@ -199,6 +199,7 @@ public class VMServiceImpl implements VMService {
         // save new vm
         VM vm = modelMapper.map(vmdto, VM.class);
         vm.setState(VmState.OFF);
+        vm.setTeam(studentTeam);
         utilitsService.updateVM(studentTeam, vmdto, vm);
 
         // update relationship
@@ -221,7 +222,7 @@ public class VMServiceImpl implements VMService {
         utilitsService.checkCourseActive(vmId);
         if(vm.getState() == VmState.OFF)
             throw new VmOffException();
-        return utilitsService.fromPathToImage("/vm.jpg");
+        return utilitsService.fromPathToImage("vms/vm");
     }
 
 }

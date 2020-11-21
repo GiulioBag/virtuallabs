@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.security.Principal;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -40,7 +41,7 @@ public class PaperController {
     public StudentDTO getStudentByPaper(Principal principal, @PathVariable(name = "paperId") String paperId){
         try{
             return ModelHelper.enrich(assignmentService.getStudentByPaper(principal.getName(), paperId));
-        }catch (TeacherNotFoundException | PaperNotFoundException e) {
+        }catch (TeacherNotFoundException | PaperNotFoundException | IOException e) {
             log.warning("getStudentByPaper: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }catch (PermissionDeniedException e){
@@ -64,15 +65,19 @@ public class PaperController {
 
     @PostMapping("/{paperId}/delivery")
     @ResponseStatus(HttpStatus.OK)
-    public void insertDeliveredPaper(Principal principal, @PathVariable(name = "paperId") String paperId, @RequestBody byte[] image){
+    public void insertDeliveredPaper(Principal principal, @PathVariable(name = "paperId") String paperId, @RequestBody Map<String, String> input){
         try{
-            assignmentService.insertPaper(image, paperId, principal);
+            if(input.containsKey("image")) {
+                assignmentService.insertPaper(input.get("image").getBytes(), paperId, principal);
+            }else{
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+            }
         }catch (StudentNotFoundException | PaperNotFoundException | MissFiledDeliveredPaperException | AssignmentNotFoundException e){
             log.warning("insertDeliveredPaper: " + e.getMessage());
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }catch (ExpiredAssignmentException | PaperNotChangeableException | StudentNotEnrolledToCourseException | WrongStutusDeliveredPaperException e){
             log.warning("insertDeliveredPaper: " + e.getMessage());
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
         }
     }
 

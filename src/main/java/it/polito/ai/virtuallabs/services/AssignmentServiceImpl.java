@@ -88,12 +88,12 @@ public class AssignmentServiceImpl implements AssignmentService{
 
     @Override
     @PreAuthorize("hasRole('TEACHER')")
-    public StudentDTO getStudentByPaper(String teacherId, String paperId) {
+    public StudentDTO getStudentByPaper(String teacherId, String paperId) throws IOException {
         Paper paper = utilitsService.checkPaper(paperId);
         utilitsService.checkTeacher(teacherId);
         utilitsService.checkCourseOwner(paper.getAssignment().getCourse().getName(), teacherId);
-
-        return modelMapper.map(paper.getStudent(), StudentDTO.class);
+        Student s = paper.getStudent();
+        return utilitsService.fromStudentEntityToDTO(s);
     }
 
     @Override
@@ -126,6 +126,11 @@ public class AssignmentServiceImpl implements AssignmentService{
             throw new CourseNotFoundException(courseName);
 
         Timestamp now = new Timestamp(System.currentTimeMillis());
+        assignmentDTO.setReleaseDate(now);
+
+        //TODO: far funzionare i timestamp con postman
+        assignmentDTO.setExpireDate(new Timestamp(System.currentTimeMillis() + 1000*60*60*24));
+
         Teacher t = teacherRepository.getOne(teacherId);
         List<Course> courses = t.getCourses();
         for (Course c : courses) {
@@ -133,24 +138,26 @@ public class AssignmentServiceImpl implements AssignmentService{
                 Assignment a = fromDTOToEntity(assignmentDTO);
                 a.setCourse(c);
                 a.setCreator(t);
-                a.setReleaseDate(now);
+                assignmentRepository.save(a);
+                assignmentRepository.flush();
+
                 List<Student> students = c.getStudents();
                 for (Student s : students){
                     Paper p = new Paper();
                     p.setAssignment(a);
                     p.setStudent(s);
                     p.setChangeable(true);
+                    paperRepository.save(p);
 
                     DeliveredPaper dp = new DeliveredPaper();
                     dp.setDeliveredDate(now);
                     dp.setStatus(PaperStatus.NULL);
                     dp.setPaper(p);
+                    deliveredPaperRepository.save(dp);
 
                     studentRepository.save(s);
-                    paperRepository.save(p);
-                    deliveredPaperRepository.save(dp);
                 }
-                assignmentRepository.save(a);
+
                 teacherRepository.save(t);
                 courseRepository.save(c);
                 return;
@@ -184,7 +191,7 @@ public class AssignmentServiceImpl implements AssignmentService{
 
         // check if the delivered paper is not already inserted
         List<DeliveredPaper> deliveredPapers = deliveredPaperRepository.getAllByPaperOrderByDeliveredDate(paper);
-        PaperStatus status = deliveredPapers.get(deliveredPapers.size() -1 ).getStatus();
+        PaperStatus status = deliveredPapers.get(0).getStatus();
         if(status.equals(PaperStatus.DELIVERED) || status.equals(PaperStatus.NULL)){
             throw new WrongStutusDeliveredPaperException();
         }
@@ -207,16 +214,6 @@ public class AssignmentServiceImpl implements AssignmentService{
         a.setName(dto.getName());
         utilitsService.fromImageToPath(dto.getContent(), "/assignments/" + id);
         return a;
-    }
-
-    AssignmentDTO fromEntityToDTO(Assignment a) throws IOException {
-        AssignmentDTO dto = new AssignmentDTO();
-        dto.setId(a.getId());
-        dto.setName(a.getName());
-        dto.setExpireDate(a.getExpireDate());
-        dto.setReleaseDate(a.getReleaseDate());
-        dto.setContent(utilitsService.fromPathToImage("/assignments/" + a.getId()));
-        return dto;
     }
 
     DeliveredPaper fromDTOToEntity(DeliveredPaperDTO dto) throws IOException {
@@ -250,7 +247,7 @@ public class AssignmentServiceImpl implements AssignmentService{
         utilitsService.checkTeacher(teacherId);
         Paper p = utilitsService.checkPaper(paperId);
         utilitsService.checkCourseOwner(p.getAssignment().getCourse().getName(), teacherId);
-        return fromEntityToDTO(deliveredPaperRepository.getAllByPaperOrderByDeliveredDate(p).get(deliveredPaperRepository.getAllByPaperOrderByDeliveredDate(p).size()-1));
+        return fromEntityToDTO(deliveredPaperRepository.getAllByPaperOrderByDeliveredDate(p).get(0));
     }
 
     @Override

@@ -12,7 +12,6 @@ import java.util.UUID;
 @Data
 public class Team {
     @Id
-    @GeneratedValue
     private String id;
     private String name;
     private boolean active = false;
@@ -67,8 +66,10 @@ public class Team {
     }
 
     @PrePersist
-    private void ensureId(){
-        this.setId(UUID.randomUUID().toString());
+    private void ensureId() {
+        if (id == null) {
+            this.setId(UUID.randomUUID().toString());
+        }
     }
 
 }

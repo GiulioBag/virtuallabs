@@ -53,26 +53,7 @@ public class TeamController {
         }
     }
 
-    //TODO fare attenzione a come deve essere passata la data
-    @PostMapping({"/", ""})
-    @ResponseStatus(HttpStatus.OK)
-    public void newTeam(@RequestBody ProposedTeamDTO proposedTeamDTO, @PathVariable(name = "courseName") String courseName, Principal principal) {
-        try {
-            teamService.proposeTeam(proposedTeamDTO, courseName, principal);
-
-        } catch (TeamAlreadyExistException | StudentAlreadyInTeamException e) {
-            log.warning("newTeam: " + e.getMessage());
-            throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
-        } catch (StudentNotEnrolledToCourseException | StudentNotHasTeamInCourseException e) {
-            log.warning("newTeam: " + e.getMessage());
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
-        }catch (MyException e) {
-            log.warning("newTeam: " + e.getMessage());
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-        }
-    }
-
-    @GetMapping("/{teamId}/confirmTeam")
+    @GetMapping("/{teamId}/confirm")
     @ResponseStatus(HttpStatus.OK)
     public void confirmTeamParticipation(@PathVariable(name = "teamId") String teamID, Principal principal){
         try {
@@ -89,7 +70,7 @@ public class TeamController {
         }
     }
 
-    @GetMapping("/{teamId}/rejectedTeam")
+    @GetMapping("/{teamId}/reject")
     @ResponseStatus(HttpStatus.OK)
     public void rejectTeamParticipation(@PathVariable(name = "teamId") String teamID, Principal principal){
         try {

@@ -8,8 +8,6 @@ import java.util.List;
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class ProposedTeamDTO {
-
     private String name;
     private List<String> studentIds;
-    private Date timeout;
 }

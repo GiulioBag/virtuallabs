@@ -132,6 +132,9 @@ public class TeamServiceImpl implements  TeamService {
         Team team = new Team();
         team.setName(proposedTeamDTO.getName());
         team.setCourse(course);
+        // One week timeout
+        team.setTimeout(new Timestamp(System.currentTimeMillis() + 604800000));
+        teamRepository.save(team);
         for (Student auxStudent:waitingStudents){
             team.addWaitingStudent(auxStudent);
             studentRepository.save(auxStudent);
@@ -139,8 +142,6 @@ public class TeamServiceImpl implements  TeamService {
         Student owner = studentRepository.getByUser_SerialNumber(principal.getName());
         team.addStudent(owner);
         studentRepository.save(owner);
-        team.setTimeout(new Timestamp(proposedTeamDTO.getTimeout().getTime()));
-        teamRepository.save(team);
     }
 
 
@@ -151,7 +152,7 @@ public class TeamServiceImpl implements  TeamService {
         // TODO potremmo mettere che se lo studente è l'ultimo ad accettare viene inviata una mail
         // TODO inviamo la mail anche nel caso in cui il corso è rifiutato
 
-        // check if team exosts
+        // check if team exists
         Team team = utilitsService.checkTeam(teamID);
 
         // check if principal is belong to the team
@@ -167,21 +168,24 @@ public class TeamServiceImpl implements  TeamService {
 
 
         // check if principal already belongs to a team of the same course
-        if(student.getCourses().contains(team.getCourse())) {
-            // remove team
-            utilitsService.removeTeam(team);
-            throw new StudentAlreadyInTeamException(principal.getName(), team.getCourse().getName());
+        for (Team t : student.getTeams()){
+            if (t.getCourse().equals(team.getCourse())) {
+                // remove team
+                utilitsService.removeTeam(team);
+                throw new StudentAlreadyInTeamException(principal.getName(), team.getCourse().getName());
+            }
         }
 
         // check if team is expired
         utilitsService.checkTeamExpired(team, true);
 
         student.addTeam(team);
+        studentRepository.save(student);
+
         if (team.getWaitingStudents().size() == 0) {
             team.setActive(true);
         }
 
-        studentRepository.save(student);
         teamRepository.save(team);
     }
 

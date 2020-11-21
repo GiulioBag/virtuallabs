@@ -24,7 +24,7 @@ import java.security.Principal;
 import java.util.List;
 
 @RestController
-@RequestMapping("/API/vm")
+@RequestMapping("/API/vms")
 @Log(topic = "VMsController")
 
 public class VmController {
@@ -76,32 +76,12 @@ public class VmController {
         }
     }
 
-    // Only student
-    @PostMapping("/create/{courseId}")
-    @ResponseStatus(HttpStatus.OK)
-    public void vmCreate(@PathVariable (name = "courseId") String courseId, @RequestBody VMDTO vmdto,
-                             Principal principal){
-        try{
-             vmService.createVM(vmdto, courseId, principal);
-        } catch ( StudentNotHasTeamInCourseException | StudentNotFoundException | VmParameterException |
-                TeamExpiredException  e){
-            log.warning("vmCreate: " + e.getClass());
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-        } catch (MaxVmException | ReachedMaximumTotalValueException e){
-            log.warning("vmCreate: " + e.getClass());
-            throw  new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
-        } catch (TeamNotActivedException e){
-            log.warning("vmCreate: " + e.getClass());
-            throw  new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
-        }
-
-    }
 
     @GetMapping(value = "/{vmId}/exec", produces = "image/png")
     public @ResponseBody byte[] execVM(Principal principal, @PathVariable(name = "vmId") String vmId){
         try{
             return vmService.execVM(vmId, principal);
-        }catch(TeacherNotFoundException | VmNotFoundException | StudentNotFoundException | IOException | ImageException e){
+        }catch(TeacherNotFoundException | VmNotFoundException | StudentNotFoundException | IOException | ImageException | VmOffException e){
             log.warning("execVM: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }catch(PermissionDeniedException | StudentNotOwnVMException | VmCourseNotActive e){

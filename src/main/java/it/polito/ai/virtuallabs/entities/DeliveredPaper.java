@@ -41,7 +41,7 @@ public class DeliveredPaper {
 
     @PrePersist
     private void ensureId(){
-        if(this.getId() != null)
+        if(this.getId() == null)
             this.setId(UUID.randomUUID().toString());
     }
 }

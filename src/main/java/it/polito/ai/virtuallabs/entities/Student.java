@@ -70,11 +70,11 @@ public class Student {
 
     public void addProposedTeam(Team team){
         proposedTeams.add(team);
-        team.getStudents().add(this);
+        team.getWaitingStudents().add(this);
     }
 
     public void removeProposedTeam(Team team){
-        team.getStudents().remove(this);
+        team.getWaitingStudents().remove(this);
         proposedTeams.remove(team);
     }
 
@@ -90,7 +90,8 @@ public class Student {
 
     @PrePersist
     private void ensureId(){
-        this.setId(UUID.randomUUID().toString());
+        if(this.id == null)
+            this.setId(UUID.randomUUID().toString());
     }
 
 }

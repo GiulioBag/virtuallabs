@@ -7,12 +7,12 @@ import javax.persistence.*;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Data
 public class Paper {
     @Id
-    @GeneratedValue
     private String id;
     private boolean changeable;
     private int score;
@@ -53,6 +53,13 @@ public class Paper {
 
     public void removeDeliveredPaper(DeliveredPaper deliveredPaper) {
         deliveredPaper.setPaper(null);
+    }
+
+    @PrePersist
+    private void ensureId() {
+        if (id == null) {
+            this.setId(UUID.randomUUID().toString());
+        }
     }
 
 }
