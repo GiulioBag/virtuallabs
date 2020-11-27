@@ -269,7 +269,7 @@ public class UtilitsServiceImpl implements UtilitsService {
 
     @Override
     public  Course checkCourseOwner (String courseName, String teacherId) {
-         Course course = courseRepository.getOne(courseName);
+        Course course = courseRepository.getOne(courseName);
         for (Teacher owner : course.getOwners()) {
             if(owner.getId().equals(teacherId)){
                 return course;

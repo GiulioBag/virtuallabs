@@ -35,7 +35,6 @@ public class DeliveredPaper {
         this.status = status;
         deliveredDate = new Timestamp(time);
         this.paper = paper;
-        this.id = UUID.randomUUID().toString();
     }
 
     @PrePersist

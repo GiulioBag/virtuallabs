@@ -43,6 +43,7 @@ public class TeacherServiceImpl implements TeacherService {
     public List<CourseDTO> getCoursesByTeacher(String teacherId) {
         if(!teacherRepository.existsById(teacherId))
             throw new TeacherNotFoundException(teacherId);
+
         return courseRepository.getCoursesByTeacher(teacherId)
                 .stream()
                 .map(i -> modelMapper.map(i, CourseDTO.class))

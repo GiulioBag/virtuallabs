@@ -190,6 +190,11 @@ public class AssignmentServiceImpl implements AssignmentService{
 
 
         DeliveredPaper deliveredPaper = new DeliveredPaper(PaperStatus.DELIVERED, new Date().getTime(), paper);
+        String id;
+        do{
+            id = UUID.randomUUID().toString();
+        }while (deliveredPaperRepository.existsById(id));
+        deliveredPaper.setId(id);
         utilitsService.fromImageToPath(contentDTO.getImage(), "deliveredPapers/"+deliveredPaper.getId());
         paper.getDeliveredPapers().add(deliveredPaper);
         deliveredPaperRepository.save(deliveredPaper);
