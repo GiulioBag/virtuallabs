@@ -27,6 +27,7 @@ I suoi metodi possono essere eseguiti da chiunque tranne per il signout.
 	"username":"s1",
 	"password":"Kioiki17"
 }
+Server replica con 200-ok se login va bene, 401-unauthorized se login errato
 
 - '/signout': (GET) Serve per disabilitare il JWToken prima dello scadere del tempo, praticamente è il logout. Contrariamente alle altre viste si deve essere autenticati per effeettuarla -> nell'header deve essere presente un campo 'Authorization'.
 
