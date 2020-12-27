@@ -74,7 +74,7 @@ Server replica con 200-ok se login va bene, 401-unauthorized se login errato
 
 - '/{assignmentId}/papers': (GET) Rende la lista dei PaperDTO associati all'assignment indicato nell'url.
 
-### COURE CONTROLLER ('/API/courses') 
+### COURSE CONTROLLER ('/API/courses') 
 
 - '/': (GET) Rende la lista di corsi.
 
