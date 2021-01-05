@@ -2,6 +2,7 @@ package it.polito.ai.virtuallabs.services;
 
 import it.polito.ai.virtuallabs.dtos.ProposedTeamDTO;
 import it.polito.ai.virtuallabs.dtos.StudentDTO;
+import it.polito.ai.virtuallabs.dtos.TeamDTO;
 import it.polito.ai.virtuallabs.dtos.VMDTO;
 import it.polito.ai.virtuallabs.entities.Course;
 import it.polito.ai.virtuallabs.entities.Student;
@@ -71,7 +72,7 @@ public class TeamServiceImpl implements  TeamService {
     // create a propose for a new team
     @Override
     @PreAuthorize("hasRole('STUDENT')")
-    public void proposeTeam (ProposedTeamDTO proposedTeamDTO, String courseName, Principal principal) {
+    public TeamDTO proposeTeam (ProposedTeamDTO proposedTeamDTO, String courseName, Principal principal) {
 
         // check if team's course exist
         Optional<Course> optCourse = courseRepository.findByName(courseName);
@@ -142,6 +143,7 @@ public class TeamServiceImpl implements  TeamService {
         Student owner = studentRepository.getByUser_SerialNumber(principal.getName());
         team.addStudent(owner);
         studentRepository.save(owner);
+        return modelMapper.map(team, TeamDTO.class);
     }
 
 

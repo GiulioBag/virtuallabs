@@ -448,6 +448,7 @@ public class CourseServiceImpl implements CourseService{
     }
 
     @Override
+
     public Optional<VMModelDTO> getVMModel(String courseName, String teacherId) {
         if(!teacherRepository.existsById(teacherId))
             throw new TeacherNotFoundException(teacherId);

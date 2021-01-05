@@ -74,6 +74,8 @@ Server replica con 200-ok se login va bene, 401-unauthorized se login errato
 
 - '/{assignmentId}/papers': (GET) Rende la lista dei PaperDTO associati all'assignment indicato nell'url.
 
+- '/{assignmentId}/teacher': (GET) Rende il Teacher DTO associato all'assignment indicato nell'url.
+
 ### COURSE CONTROLLER ('/API/courses') 
 
 - '/': (GET) Rende la lista di corsi.
@@ -104,7 +106,7 @@ Server replica con 200-ok se login va bene, 401-unauthorized se login errato
 
 - '/{courseName}/disable': (GET) Disabilità il corso. Può essere eseguito solo da un docente detentore del corso.
 
-- '/{courseName}/proposeTeam': (POST) Propone la formazione di un Team con le informazioni passate nel body (vedi postman) per il corso indicato nell'URL. Può essere eseguita solo da uno studente del corso ancora senza team. 
+- '/{courseName}/team': (POST) Propone la formazione di un Team con le informazioni passate nel body (vedi postman) per il corso indicato nell'URL. Può essere eseguita solo da uno studente del corso ancora senza team. 
 
 - '/{courseName}/team': (GET) Prende le informazioni del team del corso indicato nell'URL dell'utente che la esegue. Può essere eseguita solo da uno studente iscritto al corso. 
 

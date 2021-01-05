@@ -13,7 +13,7 @@ import java.util.Optional;
 public interface TeamService {
 
     List<StudentDTO> getTeamStudentByTeam (String teamId, Principal principal) throws IOException;
-    void proposeTeam(ProposedTeamDTO team, String courseName, Principal principal);
+    TeamDTO proposeTeam(ProposedTeamDTO team, String courseName, Principal principal);
     void confirmTeamParticipation(String teamID, Principal principal);
     void rejectTeamParticipation(String teamID, Principal principal);
 

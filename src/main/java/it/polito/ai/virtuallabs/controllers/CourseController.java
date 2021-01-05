@@ -283,12 +283,12 @@ public class CourseController {
         }
     }
 
-    @PostMapping("/{courseName}/proposeTeam")
+    @PostMapping("/{courseName}/team")
     @ResponseStatus(HttpStatus.OK)
-    public void newTeam(@RequestBody ProposedTeamDTO proposedTeamDTO, @PathVariable(name = "courseName") String courseName, Principal principal) {
+    public TeamDTO newTeam(@RequestBody ProposedTeamDTO proposedTeamDTO, @PathVariable(name = "courseName") String courseName, Principal principal) {
         try {
-            teamService.proposeTeam(proposedTeamDTO, courseName, principal);
-
+            TeamDTO teamDTO = teamService.proposeTeam(proposedTeamDTO, courseName, principal);
+            return ModelHelper.enrich(teamDTO);
         } catch (TeamAlreadyExistException | StudentAlreadyInTeamException e) {
             log.warning("newTeam: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
@@ -407,11 +407,12 @@ public class CourseController {
         }
     }
 
-    @PostMapping("/{courseName}/insertAssignment")
+    @PostMapping("/{courseName}/assignments")
     @ResponseStatus(HttpStatus.OK)
-    public void insertAssignment(Principal principal, @PathVariable(name = "courseName") String courseName, @RequestBody AssignmentDTO assignmentDTO){
+    public AssignmentDTO insertAssignment(Principal principal, @PathVariable(name = "courseName") String courseName, @RequestBody AssignmentDTO assignmentDTO){
         try{
             assignmentService.insertAssignment(assignmentDTO, courseName, principal.getName());
+            return ModelHelper.enrich(assignmentDTO);
         }catch(TeacherNotFoundException | CourseNotFoundException | IOException | ImageException e){
             log.warning("insertAssignment: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());

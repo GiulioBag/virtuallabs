@@ -2,6 +2,7 @@ package it.polito.ai.virtuallabs.controllers;
 
 import it.polito.ai.virtuallabs.dtos.AssignmentDTO;
 import it.polito.ai.virtuallabs.dtos.PaperDTO;
+import it.polito.ai.virtuallabs.dtos.TeacherDTO;
 import it.polito.ai.virtuallabs.exceptions.assignmentExceptions.AssignmentNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.teacherExceptions.PermissionDeniedException;
@@ -36,6 +37,16 @@ public class AssignmentController {
         }catch(PermissionDeniedException e){
             log.warning("getPapersByAssignment: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+        }
+    }
+
+    @GetMapping("/{assignmentId}/teacher")
+    public TeacherDTO getTeacherByAssignment(Principal principal, @PathVariable(name = "assignmentId") String assignmentId){
+        try{
+            return assignmentService.getTeacherByAssignment(principal, assignmentId);
+        }catch(AssignmentNotFoundException | TeacherNotFoundException | StudentNotFoundException e) {
+            log.warning("getPapersByAssignment: " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
     }
 }

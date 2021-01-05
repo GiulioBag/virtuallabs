@@ -79,6 +79,23 @@ public class AssignmentServiceImpl implements AssignmentService{
     }
 
     @Override
+    public TeacherDTO getTeacherByAssignment(Principal principal, String assignmentId) {
+        if (!assignmentRepository.existsById(assignmentId))
+            throw new AssignmentNotFoundException(assignmentId);
+
+        if (principal.getName().startsWith("d")) {
+            if (!teacherRepository.existsById(principal.getName()))
+                throw new TeacherNotFoundException(principal.getName());
+        } else {
+            // check if student exists
+            utilitsService.checkStudent(principal.getName());
+        }
+
+        Teacher teacher = assignmentRepository.getOne(assignmentId).getCreator();
+        return modelMapper.map(teacher, TeacherDTO.class);
+    }
+
+    @Override
     @PreAuthorize("hasRole('TEACHER')")
     public StudentDTO getStudentByPaper(String teacherId, String paperId) throws IOException {
         Paper paper = utilitsService.checkPaper(paperId);

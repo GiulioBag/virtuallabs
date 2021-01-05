@@ -5,14 +5,16 @@ import org.springframework.hateoas.Link;
 
 public class ModelHelper {
     public static CourseDTO enrich(CourseDTO courseDTO){
+        courseDTO.add(new Link("http://localhost:8080/API/courses/" + courseDTO.getName()).withRel("self"));
         courseDTO.add(new Link("http://localhost:8080/API/courses/" + courseDTO.getName() + "/students").withRel("enrolled"));
         courseDTO.add(new Link("http://localhost:8080/API/courses/" + courseDTO.getName() + "/vmmodel").withRel("vmModel"));
         courseDTO.add(new Link("http://localhost:8080/API/courses/" + courseDTO.getName() + "/assignments").withRel("assignments"));
         courseDTO.add(new Link("http://localhost:8080/API/courses/" + courseDTO.getName() + "/teachers").withRel("teachers"));
         courseDTO.add(new Link("http://localhost:8080/API/courses/" + courseDTO.getName() + "/freestudents").withRel("freestudents"));
         courseDTO.add(new Link("http://localhost:8080/API/courses/" + courseDTO.getName() + "/vms").withRel("vms"));
-
-
+        courseDTO.add(new Link("http://localhost:8080/API/courses/" + courseDTO.getName() + "/teams").withRel("teams"));
+        courseDTO.add(new Link("http://localhost:8080/API/courses/" + courseDTO.getName() + "/proposedTeams").withRel("proposedteams"));
+        courseDTO.add(new Link("http://localhost:8080/API/courses/" + courseDTO.getName() + "/team").withRel("team"));
         return courseDTO;
     }
 
@@ -32,6 +34,7 @@ public class ModelHelper {
 
     public static AssignmentDTO enrich(AssignmentDTO assignmentDTO){
         assignmentDTO.add(new Link("http://localhost:8080/API/assignments/" + assignmentDTO.getName() + "/papers").withRel("papers"));
+        assignmentDTO.add(new Link("http://localhost:8080/API/assignments/" + assignmentDTO.getName() + "/teacher").withRel("teacher"));
         return assignmentDTO;
     }
 
