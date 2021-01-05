@@ -7,10 +7,7 @@ import it.polito.ai.virtuallabs.enums.VmState;
 import it.polito.ai.virtuallabs.exceptions.ImageException;
 import it.polito.ai.virtuallabs.exceptions.courseException.CourseNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.courseException.GroupSizeException;
-import it.polito.ai.virtuallabs.exceptions.studentException.StudentAlreadyInTeamException;
-import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotEnrolledToCourseException;
-import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotFoundException;
-import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotHasTeamInCourseException;
+import it.polito.ai.virtuallabs.exceptions.studentException.*;
 import it.polito.ai.virtuallabs.exceptions.teacherExceptions.PermissionDeniedException;
 import it.polito.ai.virtuallabs.exceptions.teacherExceptions.TeacherNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.vmModelExceptions.VMModelExcessiveLimitsException;
@@ -44,6 +41,9 @@ public class CourseServiceImpl implements CourseService{
     CourseRepository courseRepository;
     @Autowired
     TeamRepository teamRepository;
+
+    @Autowired
+    UserRepository userRepository;
     @Autowired
     VMModelRepository vmModelRepository;
     @Autowired
@@ -186,11 +186,13 @@ public class CourseServiceImpl implements CourseService{
     @Override
     @PreAuthorize("hasRole('TEACHER')")
     public boolean addCourse(CourseDTO course, String teacherId) {
-        if(!teacherRepository.existsById(teacherId))
+        if (!teacherRepository.existsById(teacherId))
             throw new TeacherNotFoundException(teacherId);
-        if(courseRepository.existsById(course.getName()))
+        if (courseRepository.existsById(course.getName()))
             return false;
-        if(course.getMinGroupSize() > course.getMaxGroupSize() || course.getMinGroupSize() < 0)
+
+        if (course.getMinGroupSize() > course.getMaxGroupSize() || course.getMinGroupSize() < 0 ||
+                course.getMaxGroupSize() == 0)
             throw new GroupSizeException();
         Course c = modelMapper.map(course, Course.class);
         Teacher t = teacherRepository.getOne(teacherId);
@@ -360,7 +362,7 @@ public class CourseServiceImpl implements CourseService{
     }
 
     @Override
-    public boolean enrollOneStudent(String courseName, String studentId, String teacherId) {
+    public UserDTO enrollOneStudent(String courseName, String studentId, String teacherId) {
         Student student = utilitsService.checkStudent(studentId);
         utilitsService.checkCourse(courseName);
         utilitsService.checkTeacher(teacherId);
@@ -368,14 +370,14 @@ public class CourseServiceImpl implements CourseService{
 
         List<Student> students = course.getStudents();
         if (students.contains(student)) {
-            return false;
+            throw new StudentAlreadyEnrolled(studentId, courseName);
         }
         course.addStudent(student);
-        return true;
+        return modelMapper.map(userRepository.getOne(studentId), UserDTO.class);
     }
 
     @Override
-    public List<Boolean> enrollManyStudents(String courseName, List<String> studentIds, String teacherId) {
+    public List<UserDTO> enrollManyStudents(String courseName, List<String> studentIds, String teacherId) {
         return studentIds.stream().map(i -> enrollOneStudent(courseName, i, teacherId)).collect(Collectors.toList());
     }
 

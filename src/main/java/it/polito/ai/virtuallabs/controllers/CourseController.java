@@ -5,10 +5,7 @@ import it.polito.ai.virtuallabs.exceptions.ImageException;
 import it.polito.ai.virtuallabs.exceptions.MyException;
 import it.polito.ai.virtuallabs.exceptions.courseException.CourseNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.courseException.GroupSizeException;
-import it.polito.ai.virtuallabs.exceptions.studentException.StudentAlreadyInTeamException;
-import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotEnrolledToCourseException;
-import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotFoundException;
-import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotHasTeamInCourseException;
+import it.polito.ai.virtuallabs.exceptions.studentException.*;
 import it.polito.ai.virtuallabs.exceptions.teacherExceptions.PermissionDeniedException;
 import it.polito.ai.virtuallabs.exceptions.teacherExceptions.TeacherNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.teamException.TeamAlreadyExistException;
@@ -23,11 +20,8 @@ import it.polito.ai.virtuallabs.services.CourseService;
 import it.polito.ai.virtuallabs.services.TeamService;
 import it.polito.ai.virtuallabs.services.VMService;
 import lombok.extern.java.Log;
-import org.dom4j.rule.Mode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -150,31 +144,31 @@ public class CourseController {
     }
 
     @PostMapping("/{courseName}/enrollOne")
-    public void enrollOne(Principal principal, @PathVariable(name = "courseName") String courseName, @RequestBody Map<String, String> input){
-        try{
-            if(input.containsKey("studentId")){
-                if(!courseService.enrollOneStudent(courseName, input.get("studentId"), principal.getName())) {
-                    log.warning("enrollOne: student already enrolled");
-                    throw new ResponseStatusException(HttpStatus.CONFLICT, "Student already enrolled");
-                }
-            }else{
+    public UserDTO enrollOne(Principal principal, @PathVariable(name = "courseName") String courseName, @RequestBody Map<String, String> input) {
+        try {
+            if (input.containsKey("studentId")) {
+                UserDTO studentDTO = courseService.enrollOneStudent(courseName, input.get("studentId"), principal.getName());
+                return ModelHelper.enrich(studentDTO);
+            } else {
                 log.warning("enrollOne: wrong message received");
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Wrong message received");
             }
-        } catch (StudentNotFoundException | TeacherNotFoundException | CourseNotFoundException e){
+        } catch (StudentNotFoundException | TeacherNotFoundException | CourseNotFoundException e) {
             log.warning("enrollOne: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-        } catch (PermissionDeniedException e){
+        } catch (PermissionDeniedException e) {
             log.warning("enrollOne: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+        } catch (StudentAlreadyEnrolled e) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Student already enrolled");
         }
     }
 
     @PostMapping("/{courseName}/enrollMany")
-    public List<Boolean> enrollMany(Principal principal, @PathVariable(name = "courseName") String courseName, @RequestBody Map<String, List<String>> input){
+    public List<UserDTO> enrollMany(Principal principal, @PathVariable(name = "courseName") String courseName, @RequestBody Map<String, List<String>> input) {
         try {
             if (input.containsKey("studentIds"))
-                return courseService.enrollManyStudents(courseName, input.get("studentIds"), principal.getName());
+                return courseService.enrollManyStudents(courseName, input.get("studentIds"), principal.getName()).stream().map(ModelHelper::enrich).collect(Collectors.toList());
             else {
                 log.warning("enrollMany: wrong message received");
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Wrong message received");

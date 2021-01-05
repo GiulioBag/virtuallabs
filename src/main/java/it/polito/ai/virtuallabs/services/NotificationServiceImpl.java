@@ -35,7 +35,7 @@ public class NotificationServiceImpl implements NotificationService {
         ConfirmToken confirmToken = new ConfirmToken(UUID.randomUUID().toString(), serialNumber, timestamp);
 
         String body = "Dear " + role + " \nyour account it is been correctly register to PoliTo site. To activate" +
-                " your account you have to click to the following link: http://192.168.10.10:8080/API/user/confirm/" + confirmToken.getId();
+                " your account you have to click to the following link: http://192.168.10.10:8080/API/users/confirm/" + confirmToken.getId();
 
         String subject = "Confirm Registration";
         message.setSubject(subject);

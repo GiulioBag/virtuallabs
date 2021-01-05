@@ -1,6 +1,5 @@
 package it.polito.ai.virtuallabs.services;
 
-import com.zaxxer.hikari.pool.HikariProxyCallableStatement;
 import it.polito.ai.virtuallabs.dtos.StudentDTO;
 import it.polito.ai.virtuallabs.dtos.VMDTO;
 import it.polito.ai.virtuallabs.entities.*;
@@ -22,7 +21,6 @@ import it.polito.ai.virtuallabs.exceptions.vmException.VmCourseNotActive;
 import it.polito.ai.virtuallabs.exceptions.vmException.VmNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.vmException.VmParameterException;
 import it.polito.ai.virtuallabs.repositories.*;
-import org.apache.commons.io.FileUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -340,6 +338,7 @@ public class UtilitsServiceImpl implements UtilitsService {
     @Override
     public byte[] fromPathToImage(String path) throws IOException {
         InputStream is = this.getClass().getResourceAsStream("/static/images/" + path + ".jpg");
+        System.out.println("Path: " + path);
         BufferedImage img = ImageIO.read(is);
         ByteArrayOutputStream bao = new ByteArrayOutputStream();
         ImageIO.write(img, "jpg", bao);

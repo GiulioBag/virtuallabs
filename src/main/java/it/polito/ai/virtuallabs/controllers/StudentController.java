@@ -1,20 +1,15 @@
 package it.polito.ai.virtuallabs.controllers;
 
-import it.polito.ai.virtuallabs.dtos.*;
-import it.polito.ai.virtuallabs.exceptions.MyException;
-import it.polito.ai.virtuallabs.exceptions.studentException.StudentAlreadyInTeamException;
-import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotEnrolledToCourseException;
-import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotInvitedToTeamException;
-import it.polito.ai.virtuallabs.exceptions.teamException.*;
+import it.polito.ai.virtuallabs.dtos.StudentDTO;
 import it.polito.ai.virtuallabs.services.StudentService;
 import it.polito.ai.virtuallabs.services.VMService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.security.Principal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/API/students")
@@ -25,6 +20,11 @@ public class StudentController {
 
     @Autowired
     private VMService vmService;
+
+    @GetMapping({"", "/"})
+    public List<StudentDTO> getCourses() {
+        return studentService.getStudents().stream().map(ModelHelper::enrich).collect(Collectors.toList());
+    }
 
 }
 
