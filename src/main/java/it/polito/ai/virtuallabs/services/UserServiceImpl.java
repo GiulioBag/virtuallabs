@@ -3,7 +3,6 @@ package it.polito.ai.virtuallabs.services;
 import it.polito.ai.virtuallabs.dtos.AuthenticationRequestDTO;
 import it.polito.ai.virtuallabs.dtos.UserDTO;
 import it.polito.ai.virtuallabs.entities.*;
-import it.polito.ai.virtuallabs.exceptions.ImageException;
 import it.polito.ai.virtuallabs.exceptions.confirmTokenException.ConfirmTokenExpiredException;
 import it.polito.ai.virtuallabs.exceptions.confirmTokenException.ConfirmTokenNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.userException.*;
@@ -18,6 +17,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.*;
@@ -25,6 +25,7 @@ import java.util.*;
 import static org.springframework.http.ResponseEntity.ok;
 
 @Service
+@Transactional
 public class UserServiceImpl implements UserService {
 
     @Autowired
@@ -80,16 +81,16 @@ public class UserServiceImpl implements UserService {
     public void addUser(UserDTO userDTO) throws IOException {
 
         // Check if last name and name are not null
-        if(userDTO.getLastName() == null) {
+        if (userDTO.getLastName() == null) {
             throw new BadFieldValueException("last name");
         }
 
-        if(userDTO.getName() == null) {
+        if (userDTO.getName() == null) {
             throw new BadFieldValueException("name");
         }
 
-        /* We check first the regular expressions that correspond to students ones because in a real system these are
-         more students than teacher */
+        /* We check first the student regular expressions because in a real system there are
+         more students than teachers */
 
         // Check password structure
         String password = userDTO.getPassword();
