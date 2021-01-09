@@ -11,7 +11,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 
-
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Base64;
@@ -72,10 +71,12 @@ public class JwtTokenProvider {
     }
 
     public boolean validateToken(String token) {
+
         try {
             Jws<Claims> claims = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token);
             return !claims.getBody().getExpiration().before(new Date()) && !(jwtBlacklistRepository.existsById(token));
         } catch (JwtException | IllegalArgumentException e) {
+
             throw new it.polito.ai.virtuallabs.security.jwt.InvalidJwtAuthenticationException("Expired or invalid JWT token");
         }
     }
