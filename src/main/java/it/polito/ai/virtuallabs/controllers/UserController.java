@@ -79,6 +79,7 @@ public class UserController {
 
     @PostMapping("/signin")
     public ResponseEntity<Map<Object, Object>> signin(@RequestBody AuthenticationRequestDTO data) {
+        System.out.println("Signin started..");
         try {
             return userService.signin(data);
         } catch (Exception e) {
