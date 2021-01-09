@@ -15,7 +15,7 @@ public class ModelHelper {
         courseDTO.add(new Link(rootPath + "/courses/" + courseDTO.getName() + "/vmmodel").withRel("vmModel"));
         courseDTO.add(new Link(rootPath + "/courses/" + courseDTO.getName() + "/assignments").withRel("assignments"));
         courseDTO.add(new Link(rootPath + "/courses/" + courseDTO.getName() + "/teachers").withRel("teachers"));
-        courseDTO.add(new Link(rootPath + "/courses/" + courseDTO.getName() + "/freestudents").withRel("freestudents"));
+        courseDTO.add(new Link(rootPath + "/courses/" + courseDTO.getName() + "/freeStudents").withRel("freestudents"));
         courseDTO.add(new Link(rootPath + "/courses/" + courseDTO.getName() + "/vms").withRel("vms"));
         courseDTO.add(new Link(rootPath + "/courses/" + courseDTO.getName() + "/teams").withRel("teams"));
         courseDTO.add(new Link(rootPath + "/courses/" + courseDTO.getName() + "/proposedTeams").withRel("proposedteams"));
