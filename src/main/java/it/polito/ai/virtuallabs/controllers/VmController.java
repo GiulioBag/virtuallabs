@@ -2,15 +2,10 @@ package it.polito.ai.virtuallabs.controllers;
 
 import it.polito.ai.virtuallabs.dtos.VMDTO;
 import it.polito.ai.virtuallabs.exceptions.ImageException;
-import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotBelongToTeam;
 import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotFoundException;
-import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotHasTeamInCourseException;
 import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotOwnVMException;
 import it.polito.ai.virtuallabs.exceptions.teacherExceptions.PermissionDeniedException;
 import it.polito.ai.virtuallabs.exceptions.teacherExceptions.TeacherNotFoundException;
-import it.polito.ai.virtuallabs.exceptions.teamException.TeamExpiredException;
-import it.polito.ai.virtuallabs.exceptions.teamException.TeamNotActivedException;
-import it.polito.ai.virtuallabs.exceptions.teamException.TeamNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.vmException.*;
 import it.polito.ai.virtuallabs.services.VMService;
 import lombok.extern.java.Log;
@@ -21,7 +16,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.security.Principal;
-import java.util.List;
 
 @RestController
 @RequestMapping("/API/vms")

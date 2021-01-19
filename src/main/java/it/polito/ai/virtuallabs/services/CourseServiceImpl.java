@@ -10,6 +10,8 @@ import it.polito.ai.virtuallabs.exceptions.courseException.GroupSizeException;
 import it.polito.ai.virtuallabs.exceptions.studentException.*;
 import it.polito.ai.virtuallabs.exceptions.teacherExceptions.PermissionDeniedException;
 import it.polito.ai.virtuallabs.exceptions.teacherExceptions.TeacherNotFoundException;
+import it.polito.ai.virtuallabs.exceptions.teamException.TeamExpiredException;
+import it.polito.ai.virtuallabs.exceptions.userException.UserNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.vmModelExceptions.VMModelExcessiveLimitsException;
 import it.polito.ai.virtuallabs.repositories.*;
 import org.modelmapper.ModelMapper;
@@ -139,16 +141,20 @@ public class CourseServiceImpl implements CourseService{
         }
 
         List<Team> teams = student.getTeams();
+
         TeamDTO teamDTO = null;
         for (Team team : teams) {
             if (team.getCourse().getName().equals(courseName)) {
                 // check if the propose is expired, if it is the team is removed from db
-                utilitsService.checkTeamExpired(team, false);
-                // create TeamDTO
-                teamDTO = new TeamDTO(team);
+                try {
+                    utilitsService.checkTeamExpired(team, true);
+                    // create TeamDTO
+                    teamDTO = new TeamDTO(team);
+                } catch (TeamExpiredException e) {
+                    break;
+                }
             }
         }
-
         if(teamDTO == null){
             return Optional.empty();
         } else {
@@ -450,21 +456,35 @@ public class CourseServiceImpl implements CourseService{
     }
 
     @Override
+    public Optional<VMModelDTO> getVMModel(String courseName, String userId) {
 
-    public Optional<VMModelDTO> getVMModel(String courseName, String teacherId) {
-        if(!teacherRepository.existsById(teacherId))
-            throw new TeacherNotFoundException(teacherId);
-        if(!courseRepository.existsById(courseName))
+        if (!userRepository.existsById(userId))
+            throw new UserNotFoundException(userId);
+
+        if (!courseRepository.existsById(courseName))
             throw new CourseNotFoundException(courseName);
 
-        List<CourseDTO> courses = teacherService.getCoursesByTeacher(teacherId);
-        for (CourseDTO c : courses) {
-            if (c.getName().equals(courseName)) {
-                VMModel vmModel = courseRepository.getOne(courseName).getVmModel();
-                if(vmModel == null)
-                    return Optional.empty();
-                else
-                    return Optional.of(modelMapper.map(vmModel, VMModelDTO.class));
+        if (userId.startsWith("d")) {
+            List<CourseDTO> courses = teacherService.getCoursesByTeacher(userId);
+            for (CourseDTO c : courses) {
+                if (c.getName().equals(courseName)) {
+                    VMModel vmModel = courseRepository.getOne(courseName).getVmModel();
+                    if (vmModel == null)
+                        return Optional.empty();
+                    else
+                        return Optional.of(modelMapper.map(vmModel, VMModelDTO.class));
+                }
+            }
+        } else {
+            Course course = courseRepository.getOne(courseName);
+            for (Student student : course.getStudents()) {
+                if (student.getUser().getSerialNumber().equals(userId)) {
+                    VMModel vmModel = courseRepository.getOne(courseName).getVmModel();
+                    if (vmModel == null)
+                        return Optional.empty();
+                    else
+                        return Optional.of(modelMapper.map(vmModel, VMModelDTO.class));
+                }
             }
         }
         throw new PermissionDeniedException();

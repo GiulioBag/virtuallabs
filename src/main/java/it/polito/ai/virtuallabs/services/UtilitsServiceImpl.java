@@ -338,7 +338,6 @@ public class UtilitsServiceImpl implements UtilitsService {
     @Override
     public byte[] fromPathToImage(String path) throws IOException {
         InputStream is = this.getClass().getResourceAsStream("/static/images/" + path + ".jpg");
-        System.out.println("Path: " + path);
         BufferedImage img = ImageIO.read(is);
         ByteArrayOutputStream bao = new ByteArrayOutputStream();
         ImageIO.write(img, "jpg", bao);

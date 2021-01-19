@@ -13,8 +13,10 @@ import it.polito.ai.virtuallabs.exceptions.teamException.TeamExpiredException;
 import it.polito.ai.virtuallabs.exceptions.teamException.TeamNotActivedException;
 import it.polito.ai.virtuallabs.exceptions.vmException.MaxVmException;
 import it.polito.ai.virtuallabs.exceptions.vmException.ReachedMaximumTotalValueException;
+import it.polito.ai.virtuallabs.exceptions.vmException.VmCourseNotActive;
 import it.polito.ai.virtuallabs.exceptions.vmException.VmParameterException;
 import it.polito.ai.virtuallabs.exceptions.vmModelExceptions.VMModelExcessiveLimitsException;
+import it.polito.ai.virtuallabs.exceptions.vmModelExceptions.VMModelNotDefinedException;
 import it.polito.ai.virtuallabs.services.AssignmentService;
 import it.polito.ai.virtuallabs.services.CourseService;
 import it.polito.ai.virtuallabs.services.TeamService;
@@ -223,20 +225,24 @@ public class CourseController {
     }
 
     @GetMapping("/{courseName}/vmmodel")
-    public Optional<VMModelDTO> getVMModel(Principal principal, @PathVariable(name = "courseName") String courseName){
-        try{
+    public Optional<VMModelDTO> getVMModel(Principal principal, @PathVariable(name = "courseName") String courseName) {
+        log.info("Richiesta per le vmmodel del corso: " + courseName);
+
+        try {
             return courseService.getVMModel(courseName, principal.getName());
-        }catch(CourseNotFoundException | TeacherNotFoundException e){
+        } catch (CourseNotFoundException | TeacherNotFoundException e) {
             log.warning("getVMModel: " + e.getMessage());
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
     }
 
     @PostMapping("/{courseName}/vmmodel")
     @ResponseStatus(HttpStatus.OK)
-    public void setVMModel(Principal principal, @PathVariable(name = "courseName") String courseName, @RequestBody VMModelDTO vmModelDTO) {
+    public VMModelDTO setVMModel(Principal principal, @PathVariable(name = "courseName") String courseName, @RequestBody VMModelDTO vmModelDTO) {
+        log.info("Inserimento nuovo vModel: " + vmModelDTO.getVcpu());
         try {
             courseService.setVMModel(vmModelDTO, courseName, principal.getName());
+            return ModelHelper.enrich(vmModelDTO, courseName);
         } catch (CourseNotFoundException | TeacherNotFoundException e) {
             log.warning("setVMModel: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
@@ -277,7 +283,7 @@ public class CourseController {
         }
     }
 
-    @PostMapping("/{courseName}/team")
+    @PostMapping("/{courseName}/teams")
     @ResponseStatus(HttpStatus.OK)
     public TeamDTO newTeam(@RequestBody ProposedTeamDTO proposedTeamDTO, @PathVariable(name = "courseName") String courseName, Principal principal) {
         try {
@@ -361,19 +367,19 @@ public class CourseController {
     }
 
     // Only student
-    @PostMapping("/{courseName}/createVM")
+    @PostMapping("/{courseName}/vms")
     @ResponseStatus(HttpStatus.OK)
     public void vmCreate(@PathVariable (name = "courseName") String courseId, @RequestBody VMDTO vmdto,
                          Principal principal){
         try{
             vmService.createVM(vmdto, courseId, principal);
-        } catch ( StudentNotHasTeamInCourseException | StudentNotFoundException | VmParameterException |
-                TeamExpiredException e){
+        } catch (StudentNotHasTeamInCourseException | StudentNotFoundException | VmParameterException |
+                TeamExpiredException | VmCourseNotActive | VMModelNotDefinedException e) {
             log.warning("vmCreate: " + e.getClass());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-        } catch (MaxVmException | ReachedMaximumTotalValueException e){
+        } catch (MaxVmException | ReachedMaximumTotalValueException e) {
             log.warning("vmCreate: " + e.getClass());
-            throw  new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
+            throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
         } catch (TeamNotActivedException e){
             log.warning("vmCreate: " + e.getClass());
             throw  new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
@@ -415,14 +421,23 @@ public class CourseController {
 
     @GetMapping("/{courseName}/assignments")
     public List<AssignmentDTO> getAssignmentsByCourse(Principal principal, @PathVariable(name = "courseName") String courseName){
-        try{
+        try {
             return courseService.getAssignmentsByCourse(principal, courseName).stream().map(ModelHelper::enrich).collect(Collectors.toList());
-        }catch(CourseNotFoundException | TeacherNotFoundException | StudentNotFoundException e){
+        } catch (CourseNotFoundException | TeacherNotFoundException | StudentNotFoundException e) {
             log.warning("getAssignmentsByCourse: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-        }catch (PermissionDeniedException | StudentNotEnrolledToCourseException e){
+        } catch (PermissionDeniedException | StudentNotEnrolledToCourseException e) {
             log.warning("getAssignmentsByCourse: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+        }
+    }
+
+    @GetMapping("/{courseName}/myvms")
+    public List<VMDTO> getVms(Principal principal, @PathVariable(name = "courseName") String courseName) {
+        try {
+            return vmService.getMyVms(principal, courseName).stream().map(ModelHelper::enrich).collect(Collectors.toList());
+        } catch (StudentNotFoundException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
     }
 

@@ -1,11 +1,15 @@
 package it.polito.ai.virtuallabs.services;
 
 import it.polito.ai.virtuallabs.dtos.VMDTO;
-import it.polito.ai.virtuallabs.entities.*;
+import it.polito.ai.virtuallabs.entities.Student;
+import it.polito.ai.virtuallabs.entities.Team;
+import it.polito.ai.virtuallabs.entities.VM;
+import it.polito.ai.virtuallabs.entities.VMModel;
 import it.polito.ai.virtuallabs.enums.VmState;
-import it.polito.ai.virtuallabs.exceptions.teacherExceptions.PermissionDeniedException;
 import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotHasTeamInCourseException;
+import it.polito.ai.virtuallabs.exceptions.teacherExceptions.PermissionDeniedException;
 import it.polito.ai.virtuallabs.exceptions.vmException.*;
+import it.polito.ai.virtuallabs.exceptions.vmModelExceptions.VMModelNotDefinedException;
 import it.polito.ai.virtuallabs.repositories.*;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +18,9 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.security.Principal;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class VMServiceImpl implements VMService {
@@ -151,7 +158,6 @@ public class VMServiceImpl implements VMService {
         Student student = utilitsService.checkStudent(principal.getName());
 
         // check if the principal belongs to a team of the course
-
         Team studentTeam = null;
         boolean inTeam = false;
         for (Team team : student.getTeams()) {
@@ -181,18 +187,26 @@ public class VMServiceImpl implements VMService {
         if(vmdto.getVcpu() <= 0 ){
             throw new VmParameterException("vcpu");
         }
-        if(vmdto.getRam() <= 0 ){
+        if (vmdto.getRam() <= 0) {
             throw new VmParameterException("ram");
         }
-        if(vmdto.getSpace() <= 0 ){
+        if (vmdto.getSpace() <= 0) {
             throw new VmParameterException("space");
         }
 
         // check if the maximum number of vm for the team is already reached
-        int maxIstances = studentTeam.getCourse().getVmModel().getInstances();
+        VMModel vmModel;
+        int maxIstances;
+        try {
+            vmModel = studentTeam.getCourse().getVmModel();
+            maxIstances = vmModel.getInstances();
+        } catch (NullPointerException e) {
+            throw new VMModelNotDefinedException(courseId);
+        }
+
         int istances = studentTeam.getVMs().size();
 
-        if(istances == maxIstances){
+        if (istances == maxIstances) {
             throw new MaxVmException();
         }
 
@@ -220,9 +234,23 @@ public class VMServiceImpl implements VMService {
         }
         // check if the course is active
         utilitsService.checkCourseActive(vmId);
-        if(vm.getState() == VmState.OFF)
+        if (vm.getState() == VmState.OFF)
             throw new VmOffException();
         return utilitsService.fromPathToImage("vms/vm");
     }
 
+    @Override
+    @PreAuthorize("hasRole('STUDENT')")
+    public List<VMDTO> getMyVms(Principal principal, String courseName) {
+        Student student = utilitsService.checkStudent(principal.getName());
+
+        List<VM> vms = student.getVms();
+        List<VM> vms_toReturn = new ArrayList<>();
+        for (VM vm : vms) {
+            if (courseName.equals(vm.getTeam().getCourse().getName())) {
+                vms_toReturn.add(vm);
+            }
+        }
+        return vms_toReturn.stream().map(i -> modelMapper.map(i, VMDTO.class)).collect(Collectors.toList());
+    }
 }

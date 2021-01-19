@@ -12,7 +12,7 @@ public class ModelHelper {
     public static CourseDTO enrich(CourseDTO courseDTO) {
         courseDTO.add(new Link(rootPath + "/courses/" + courseDTO.getName()).withRel("self"));
         courseDTO.add(new Link(rootPath + "/courses/" + courseDTO.getName() + "/students").withRel("enrolled"));
-        courseDTO.add(new Link(rootPath + "/courses/" + courseDTO.getName() + "/vmmodel").withRel("vmModel"));
+        courseDTO.add(new Link(rootPath + "/courses/" + courseDTO.getName() + "/vmmodel").withRel("vmmodel"));
         courseDTO.add(new Link(rootPath + "/courses/" + courseDTO.getName() + "/assignments").withRel("assignments"));
         courseDTO.add(new Link(rootPath + "/courses/" + courseDTO.getName() + "/teachers").withRel("teachers"));
         courseDTO.add(new Link(rootPath + "/courses/" + courseDTO.getName() + "/freeStudents").withRel("freestudents"));
@@ -20,6 +20,7 @@ public class ModelHelper {
         courseDTO.add(new Link(rootPath + "/courses/" + courseDTO.getName() + "/teams").withRel("teams"));
         courseDTO.add(new Link(rootPath + "/courses/" + courseDTO.getName() + "/proposedTeams").withRel("proposedteams"));
         courseDTO.add(new Link(rootPath + "/courses/" + courseDTO.getName() + "/team").withRel("team"));
+        courseDTO.add(new Link(rootPath + "/courses/" + courseDTO.getName() + "/myvms").withRel("myvms"));
         return courseDTO;
     }
 
@@ -32,12 +33,22 @@ public class ModelHelper {
     }
 
     public static TeamDTO enrich(TeamDTO teamDTO) {
-        teamDTO.add(new Link(rootPath + "/teams/" + teamDTO.getName() + "/members").withRel("members"));
-        teamDTO.add(new Link(rootPath + "/teams/" + teamDTO.getName() + "/vms").withRel("vms"));
+        teamDTO.add(new Link(rootPath + "/teams/" + teamDTO.getId() + "/members").withRel("members"));
+        teamDTO.add(new Link(rootPath + "/teams/" + teamDTO.getId() + "/proposedMembers").withRel("proposedmembers"));
+        teamDTO.add(new Link(rootPath + "/teams/" + teamDTO.getId() + "/vms").withRel("vms"));
+        if (!teamDTO.isActive()) {
+            teamDTO.add(new Link(rootPath + "/teams/" + teamDTO.getId() + "/confirm").withRel("confirm"));
+            teamDTO.add(new Link(rootPath + "/teams/" + teamDTO.getId() + "/reject").withRel("reject"));
+        }
         return teamDTO;
     }
 
     public static VMDTO enrich(VMDTO vmdto) {
+        vmdto.add(new Link(rootPath + "/vms/").withRel("change"));
+        vmdto.add(new Link(rootPath + "/vms/" + vmdto.getId() + "/on").withRel("on"));
+        vmdto.add(new Link(rootPath + "/vms/" + vmdto.getId() + "/off").withRel("off"));
+        vmdto.add(new Link(rootPath + "/vms/" + vmdto.getId()).withRel("delete"));
+        vmdto.add(new Link(rootPath + "/vms/" + vmdto.getId() + "exec").withRel("exec"));
         return vmdto;
     }
 
@@ -57,5 +68,10 @@ public class ModelHelper {
 
     public static DeliveredPaperDTO enrich(DeliveredPaperDTO dpDTO) {
         return dpDTO;
+    }
+
+    public static VMModelDTO enrich(VMModelDTO vmModelDTO, String courseName) {
+        vmModelDTO.add(new Link(rootPath + "/" + courseName + "/vmmodel").withRel("set"));
+        return vmModelDTO;
     }
 }

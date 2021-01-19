@@ -33,6 +33,7 @@ public class StudentController {
         return studentService.getCourses(principal).stream().map(ModelHelper::enrich).collect(Collectors.toList());
     }
 
+
 }
 
 

@@ -17,4 +17,6 @@ public interface VMService {
     void createVM(VMDTO vmdto, String courseId, Principal principal);
     byte[] execVM(String vmId, Principal principal) throws IOException;
 
+    List<VMDTO> getMyVms(Principal principal, String courseName);
+
 }

@@ -1,14 +1,11 @@
 package it.polito.ai.virtuallabs.controllers;
 
 
-import it.polito.ai.virtuallabs.dtos.ProposedTeamDTO;
 import it.polito.ai.virtuallabs.dtos.StudentDTO;
 import it.polito.ai.virtuallabs.dtos.VMDTO;
 import it.polito.ai.virtuallabs.exceptions.ImageException;
-import it.polito.ai.virtuallabs.exceptions.MyException;
 import it.polito.ai.virtuallabs.exceptions.studentException.*;
 import it.polito.ai.virtuallabs.exceptions.teacherExceptions.PermissionDeniedException;
-import it.polito.ai.virtuallabs.exceptions.teamException.TeamAlreadyExistException;
 import it.polito.ai.virtuallabs.exceptions.teamException.TeamExpiredException;
 import it.polito.ai.virtuallabs.exceptions.teamException.TeamNotActivedException;
 import it.polito.ai.virtuallabs.exceptions.teamException.TeamNotFoundException;
@@ -44,10 +41,31 @@ public class TeamController {
         } catch (StudentNotFoundException | TeamNotFoundException | IOException | ImageException e) {
             log.warning("getTeamStudentByTeam " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-        } catch (TeamExpiredException  e) {
+        } catch (TeamExpiredException e) {
             log.warning("getTeamStudentByTeam " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
-        } catch (StudentNotEnrolledToCourseException | StudentNotBelongToTeam  e) {
+        } catch (StudentNotEnrolledToCourseException | StudentNotBelongToTeam e) {
+            log.warning("getTeamStudentByTeam " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+        }
+    }
+
+    @GetMapping("/{teamId}/proposedMembers")
+    public List<StudentDTO> getTeamStudentByProposedTeam(@PathVariable(name = "teamId") String teamId, Principal principal) {
+        try {
+            List<StudentDTO> studentDTOList = teamService.getTeamStudentByProposedTeam(teamId, principal);
+            for (StudentDTO studentDTO : studentDTOList) {
+                ModelHelper.enrich(studentDTO);
+            }
+            return studentDTOList;
+
+        } catch (StudentNotFoundException | TeamNotFoundException | IOException | ImageException e) {
+            log.warning("getTeamStudentByTeam " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (TeamExpiredException e) {
+            log.warning("getTeamStudentByTeam " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
+        } catch (StudentNotEnrolledToCourseException | StudentNotBelongToTeam e) {
             log.warning("getTeamStudentByTeam " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
         }
@@ -55,13 +73,13 @@ public class TeamController {
 
     @GetMapping("/{teamId}/confirm")
     @ResponseStatus(HttpStatus.OK)
-    public void confirmTeamParticipation(@PathVariable(name = "teamId") String teamID, Principal principal){
+    public void confirmTeamParticipation(@PathVariable(name = "teamId") String teamID, Principal principal) {
         try {
             teamService.confirmTeamParticipation(teamID, principal);
         } catch (TeamNotFoundException | StudentNotFoundException | TeamExpiredException e) {
             log.warning("confirmTeamParticipation: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-        } catch (StudentNotInvitedToTeamException  | StudentAlreadyInTeamException e) {
+        } catch (StudentNotInvitedToTeamException | StudentAlreadyInTeamException e) {
             log.warning("confirmTeamParticipation: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
         } catch (StudentAlreadyAcceptedTeamException e) {
@@ -85,7 +103,6 @@ public class TeamController {
         }
     }
 
-    // Only teacher
     @GetMapping("/{teamName}/vms")
     public List<VMDTO> getVMSByTeam(@PathVariable(name = "teamName") String teamName, Principal principal) {
         try {

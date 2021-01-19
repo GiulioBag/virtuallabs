@@ -2,11 +2,12 @@ package it.polito.ai.virtuallabs.dtos;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.springframework.hateoas.RepresentationModel;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
 
-public class VMModelDTO {
+public class VMModelDTO extends RepresentationModel<VMModelDTO> {
 
     private String id;
     private String os;

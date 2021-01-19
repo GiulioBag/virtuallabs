@@ -11,7 +11,10 @@ import it.polito.ai.virtuallabs.entities.Team;
 import it.polito.ai.virtuallabs.exceptions.courseException.CourseNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.studentException.*;
 import it.polito.ai.virtuallabs.exceptions.teacherExceptions.PermissionDeniedException;
-import it.polito.ai.virtuallabs.exceptions.teamException.*;
+import it.polito.ai.virtuallabs.exceptions.teamException.CreatorInsideTeamException;
+import it.polito.ai.virtuallabs.exceptions.teamException.DuplicatedTeamMembersException;
+import it.polito.ai.virtuallabs.exceptions.teamException.TeamAlreadyExistException;
+import it.polito.ai.virtuallabs.exceptions.teamException.WrongTeamDimensionException;
 import it.polito.ai.virtuallabs.repositories.*;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +24,10 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.security.Principal;
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -69,14 +75,40 @@ public class TeamServiceImpl implements  TeamService {
 
     }
 
+    @Override
+    @PreAuthorize("hasRole('STUDENT')")
+    public List<StudentDTO> getTeamStudentByProposedTeam(String teamId, Principal principal) throws IOException {
+
+        // check if team exists
+        Team team = utilitsService.checkTeam(teamId);
+
+        // check if the student is in the team
+        Student student = studentRepository.getByUser_SerialNumber(principal.getName());
+        if (!team.getStudents().contains(student) && !team.getWaitingStudents().contains(student)) {
+            throw new StudentNotBelongToTeam(principal.getName(), teamId);
+        }
+
+        // check if the team is not expired
+        utilitsService.checkTeamExpired(team, true);
+
+        List<StudentDTO> studentDTOList = new ArrayList<>();
+
+        for (Student teamStudent : team.getWaitingStudents()) {
+            studentDTOList.add(utilitsService.fromStudentEntityToDTO(teamStudent));
+        }
+
+        return studentDTOList;
+
+    }
+
     // create a propose for a new team
     @Override
     @PreAuthorize("hasRole('STUDENT')")
-    public TeamDTO proposeTeam (ProposedTeamDTO proposedTeamDTO, String courseName, Principal principal) {
+    public TeamDTO proposeTeam(ProposedTeamDTO proposedTeamDTO, String courseName, Principal principal) {
 
         // check if team's course exist
         Optional<Course> optCourse = courseRepository.findByName(courseName);
-        if(optCourse.isEmpty()){
+        if (optCourse.isEmpty()) {
             throw new CourseNotFoundException(courseName);
         }
 
@@ -209,7 +241,6 @@ public class TeamServiceImpl implements  TeamService {
     }
 
     @Override
-    @PreAuthorize("hasRole('TEACHER')")
     public List<VMDTO> getVMsByTeam(String teamId, Principal principal) {
 
         Team team = utilitsService.checkTeam(teamId);
