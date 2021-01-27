@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import javax.transaction.Transactional;
 import java.io.IOException;
 import java.security.Principal;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -43,7 +44,6 @@ public class CourseServiceImpl implements CourseService{
     CourseRepository courseRepository;
     @Autowired
     TeamRepository teamRepository;
-
     @Autowired
     UserRepository userRepository;
     @Autowired
@@ -61,13 +61,16 @@ public class CourseServiceImpl implements CourseService{
     @Autowired
     UtilitsService utilitsService;
 
+    @Autowired
+    VMRepository vmRepository;
+
     @Override
     @PreAuthorize("hasRole('STUDENT')")
-    public List<TeamDTO> getProposedTeamByCourse(String courseName, Principal principal){
+    public List<TeamDTO> getProposedTeamByCourse(String courseName, Principal principal) {
 
         // check if the course exist
         Optional<Course> optCourse = courseRepository.findByName(courseName);
-        if(optCourse.isEmpty()){
+        if (optCourse.isEmpty()) {
             throw new CourseNotFoundException(courseName);
         }
 
@@ -379,6 +382,25 @@ public class CourseServiceImpl implements CourseService{
             throw new StudentAlreadyEnrolled(studentId, courseName);
         }
         course.addStudent(student);
+
+        List<Assignment> assignments = course.getAssignments();
+        for (Assignment assignment : assignments) {
+            if (utilitsService.checkExpiredAssignment(assignment)) {
+                Paper p = new Paper();
+                p.setAssignment(assignment);
+                p.setStudent(student);
+                p.setChangeable(true);
+                paperRepository.save(p);
+
+                DeliveredPaper dp = new DeliveredPaper();
+                dp.setDeliveredDate(new Timestamp(System.currentTimeMillis()));
+                dp.setStatus(PaperStatus.NULL);
+                dp.setPaper(p);
+                deliveredPaperRepository.save(dp);
+                studentRepository.save(student);
+            }
+        }
+
         return modelMapper.map(userRepository.getOne(studentId), UserDTO.class);
     }
 
@@ -389,13 +411,52 @@ public class CourseServiceImpl implements CourseService{
 
     @Override
     public boolean disenrollOneStudent(String courseName, String studentId, String teacherId) {
+
+
         Student student = utilitsService.checkStudent(studentId);
         utilitsService.checkCourse(courseName);
         utilitsService.checkTeacher(teacherId);
         Course course = utilitsService.checkCourseOwner(courseName, teacherId);
 
         List<Student> students = course.getStudents();
-        if (students.contains(student)){
+        if (students.contains(student)) {
+
+            List<Paper> papers = student.getPapers();
+            List<DeliveredPaper> deliveredPapers_toDelete = new ArrayList<>();
+            List<Paper> paperList_toDelete = new ArrayList<>();
+
+            for (Paper paper : papers) {
+                if (paper.getAssignment().getCourse().getName().equals(courseName)) {
+                    List<DeliveredPaper> deliveredPapers = paper.getDeliveredPapers();
+                    deliveredPapers_toDelete.addAll(deliveredPapers);
+                }
+                paperList_toDelete.add(paper);
+            }
+
+            deliveredPaperRepository.deleteInBatch(deliveredPapers_toDelete);
+            paperRepository.deleteInBatch(paperList_toDelete);
+
+            List<Team> teams = student.getTeams();
+            for (Team team : teams) {
+                if (team.getCourse().getName().equals(courseName)) {
+
+                    List<VM> vms = team.getVMs();
+                    for (VM vm : vms) {
+                        if (vm.getOwners().size() == 1 && vm.getOwners().get(0) == student) {
+                            vmRepository.delete(vm);
+                        }
+                    }
+                    team.removeStudent(student);
+                    teamRepository.save(team);
+                    break;
+                }
+            }
+            List<Team> proposedTeams = student.getProposedTeams();
+            for (Team proposedTeam : proposedTeams) {
+                if (proposedTeam.getCourse().getName().equals(courseName)) {
+                    utilitsService.removeTeam(proposedTeam);
+                }
+            }
             student.removeCourse(course);
             return true;
         }

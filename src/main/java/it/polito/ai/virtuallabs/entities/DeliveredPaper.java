@@ -1,6 +1,5 @@
 package it.polito.ai.virtuallabs.entities;
 
-import it.polito.ai.virtuallabs.dtos.DeliveredPaperDTO;
 import it.polito.ai.virtuallabs.enums.PaperStatus;
 import lombok.Data;
 
@@ -15,6 +14,7 @@ public class DeliveredPaper {
     private String id;
     private PaperStatus status;
     private Timestamp deliveredDate;
+    private String comment;
 
     @ManyToOne
     @JoinColumn(name = "paper_id")

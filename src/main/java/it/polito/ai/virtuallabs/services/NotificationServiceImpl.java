@@ -27,7 +27,7 @@ public class NotificationServiceImpl implements NotificationService {
         SimpleMailMessage message = new SimpleMailMessage();
         // TODO per debbug ho messo la mia mail
         //message.setTo(address);
-        message.setTo("lorenzo_vaiani@yahoo.com");
+        message.setTo("m.rebuglio@gmail.com");
 
         // TODO è possibile verificare la mail fino a due giorni dopo
         Date date = new Date();

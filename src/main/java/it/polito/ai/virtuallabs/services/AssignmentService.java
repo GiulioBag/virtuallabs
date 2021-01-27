@@ -8,11 +8,20 @@ import java.util.List;
 
 public interface AssignmentService {
     List<PaperDTO> getPapersByAssignment(Principal principal, String assignmentId);
+
     TeacherDTO getTeacherByAssignment(Principal principal, String assignmentId);
+
     StudentDTO getStudentByPaper(String teacherId, String paperId) throws IOException;
+
     List<DeliveredPaperDTO> getHistoryByPaper(String paperId, String teacherId);
-    void insertAssignment(AssignmentDTO assignmentDTO, String courseName, String teacherId) throws IOException;
-    void insertPaper (ContentDTO contentDTO, String paperId, Principal principal) throws IOException;
+
+    AssignmentDTO insertAssignment(AssignmentDTO assignmentDTO, String courseName, String teacherId) throws IOException;
+
+    void insertPaper(ContentDTO contentDTO, String paperId, Principal principal) throws IOException;
+
     DeliveredPaperDTO getLastVersion(String teacherId, String paperId) throws IOException;
-    void checkPaper(ContentDTO contentDTO, String teacherId, String paperId) throws IOException;
+
+    void checkPaper(EvaluatedPaperDTO evaluatedPaperDTO, String teacherId, String paperId) throws IOException;
+
+    AssignmentDTO getAssignmentbyPaper(String paperId, Principal principal);
 }

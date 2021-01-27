@@ -1,6 +1,5 @@
 package it.polito.ai.virtuallabs.dtos;
 
-import it.polito.ai.virtuallabs.entities.DeliveredPaper;
 import it.polito.ai.virtuallabs.enums.PaperStatus;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -15,5 +14,6 @@ public class DeliveredPaperDTO   {
     private PaperStatus status;
     private Timestamp deliveredDate;
     private byte[] image;
+    private String comment;
 
 }

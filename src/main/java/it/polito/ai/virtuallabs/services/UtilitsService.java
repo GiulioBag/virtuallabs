@@ -34,15 +34,22 @@ public interface UtilitsService {
     // ASSIGNMENT
     Assignment checkAssignment(String assignmentId);
     void checkExpiredAssignmentByPaper(Paper paper, boolean activeException);
-    void checkExpiredAssignment(Assignment assignment, boolean activeException);
+
+    boolean checkExpiredAssignment(Assignment assignment);
 
     // PAPER
-    Paper checkPaper (String paperId);
+    Paper checkPaper(String paperId);
 
     // COURSE
     Course checkCourse(String courseName);
-    Course checkCourseOwner (String courseName, String teacherId);
+
+    Course checkCourseOwner(String courseName, String teacherId);
 
     void fromImageToPath(byte[] image, String path) throws IOException;
+
     byte[] fromPathToImage(String path) throws IOException;
+
+    void ImgAdd(String path, byte[] img);
+
+    void removeImgsFromMap();
 }

@@ -1,17 +1,11 @@
 package it.polito.ai.virtuallabs.controllers;
 
-import it.polito.ai.virtuallabs.dtos.DeliveredPaperDTO;
-import it.polito.ai.virtuallabs.dtos.ContentDTO;
-import it.polito.ai.virtuallabs.dtos.StudentDTO;
+import it.polito.ai.virtuallabs.dtos.*;
 import it.polito.ai.virtuallabs.exceptions.ImageException;
-import it.polito.ai.virtuallabs.exceptions.assignmentExceptions.AssignmentNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.assignmentExceptions.ExpiredAssignmentException;
-import it.polito.ai.virtuallabs.exceptions.deliveredPaperException.MissFiledDeliveredPaperException;
-import it.polito.ai.virtuallabs.exceptions.deliveredPaperException.WrongStutusDeliveredPaperException;
-import it.polito.ai.virtuallabs.exceptions.paperExceptions.PaperNotChangeableException;
 import it.polito.ai.virtuallabs.exceptions.paperExceptions.PaperNotCheckableException;
 import it.polito.ai.virtuallabs.exceptions.paperExceptions.PaperNotFoundException;
-import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotEnrolledToCourseException;
+import it.polito.ai.virtuallabs.exceptions.studentException.StudentHasNotPaper;
 import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.teacherExceptions.PermissionDeniedException;
 import it.polito.ai.virtuallabs.exceptions.teacherExceptions.TeacherNotFoundException;
@@ -50,29 +44,26 @@ public class PaperController {
 
     @GetMapping("/{paperId}/history")
     public List<DeliveredPaperDTO> getHistoryByPaper(Principal principal, @PathVariable(name = "paperId") String paperId){
-        try{
+        try {
             return assignmentService.getHistoryByPaper(paperId, principal.getName()).stream().map(ModelHelper::enrich).collect(Collectors.toList());
-        }catch (TeacherNotFoundException | PaperNotFoundException e) {
+        } catch (TeacherNotFoundException | PaperNotFoundException | StudentNotFoundException e) {
             log.warning("getStudentByPaper: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-        }catch (PermissionDeniedException e){
-            log.warning("getStudentByPaper: " + e.getMessage() );
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        } catch (PermissionDeniedException | StudentHasNotPaper e) {
+            log.warning("getStudentByPaper: " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
         }
     }
 
     @PostMapping("/{paperId}/delivery")
     @ResponseStatus(HttpStatus.OK)
     public void insertDeliveredPaper(Principal principal, @PathVariable(name = "paperId") String paperId, @RequestBody ContentDTO contentDTO){
-        try{
+        try {
             assignmentService.insertPaper(contentDTO, paperId, principal);
-        }catch (StudentNotFoundException | PaperNotFoundException | MissFiledDeliveredPaperException
-                | AssignmentNotFoundException | IOException | ImageException e){
-            log.warning("insertDeliveredPaper: " + e.getMessage());
+        } catch (IOException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Cannot open the image.");
+        } catch (ExpiredAssignmentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-        }catch (ExpiredAssignmentException | PaperNotChangeableException | StudentNotEnrolledToCourseException | WrongStutusDeliveredPaperException e){
-            log.warning("insertDeliveredPaper: " + e.getMessage());
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
         }
     }
 
@@ -91,15 +82,32 @@ public class PaperController {
 
     @PostMapping("/{paperId}/check")
     @ResponseStatus(HttpStatus.OK)
-    public void checkPaper(@RequestBody ContentDTO contentDTO, @PathVariable(name = "paperId")String paperId, Principal principal){
-        try{
-            assignmentService.checkPaper(contentDTO, principal.getName(), paperId);
-        }catch (TeacherNotFoundException | PaperNotFoundException | IOException | ImageException e){
+    public void checkPaper(@RequestBody EvaluatedPaperDTO evaluatedPaperDTO, @PathVariable(name = "paperId") String paperId, Principal principal) {
+        try {
+
+            assignmentService.checkPaper(evaluatedPaperDTO, principal.getName(), paperId);
+
+        } catch (TeacherNotFoundException | PaperNotFoundException | IOException | ImageException e) {
             log.warning("checkPaper: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-        }catch(PermissionDeniedException | PaperNotCheckableException e){
+        } catch (PermissionDeniedException | PaperNotCheckableException e) {
             log.warning("checkPaper: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
         }
     }
+
+    @GetMapping("/{paperId}/assignment")
+    public AssignmentDTO getAssignment(@PathVariable(name = "paperId") String paperId, Principal principal) {
+        try {
+            return ModelHelper.enrich(assignmentService.getAssignmentbyPaper(paperId, principal));
+        } catch (PermissionDeniedException e) {
+            log.warning("checkPaper: " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+        } catch (TeacherNotFoundException | PaperNotFoundException | StudentNotFoundException e) {
+            log.warning("checkPaper: " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+
 }

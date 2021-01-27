@@ -1,10 +1,8 @@
 package it.polito.ai.virtuallabs.entities;
 
-import it.polito.ai.virtuallabs.enums.PaperStatus;
 import lombok.Data;
 
 import javax.persistence.*;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -15,7 +13,8 @@ public class Paper {
     @Id
     private String id;
     private boolean changeable;
-    private int score;
+    private int score = -1;
+
 
     @ManyToOne
     @JoinColumn(name = "assignment_id")

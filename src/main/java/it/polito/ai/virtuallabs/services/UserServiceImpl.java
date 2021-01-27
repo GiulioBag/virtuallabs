@@ -119,6 +119,7 @@ public class UserServiceImpl implements UserService {
             throw new EmailAlreadyExistException();
         }
 
+
         User user = fromDTOtoEntity(userDTO);
         user.setPassword(encoder.encode(password));
         user.setActive(false);
@@ -213,6 +214,7 @@ public class UserServiceImpl implements UserService {
         user.setRoles(new ArrayList<>());
 
         String path = "users/" + user.getSerialNumber();
+        utilitsService.ImgAdd(userDTO.getSerialNumber(), userDTO.getPhoto());
         utilitsService.fromImageToPath(userDTO.getPhoto(), path);
         return user;
     }

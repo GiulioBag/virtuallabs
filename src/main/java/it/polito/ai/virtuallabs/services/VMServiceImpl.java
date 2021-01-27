@@ -1,12 +1,15 @@
 package it.polito.ai.virtuallabs.services;
 
+import it.polito.ai.virtuallabs.dtos.StudentDTO;
 import it.polito.ai.virtuallabs.dtos.VMDTO;
 import it.polito.ai.virtuallabs.entities.Student;
 import it.polito.ai.virtuallabs.entities.Team;
 import it.polito.ai.virtuallabs.entities.VM;
 import it.polito.ai.virtuallabs.entities.VMModel;
 import it.polito.ai.virtuallabs.enums.VmState;
+import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotBelongToTeam;
 import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotHasTeamInCourseException;
+import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotOwnVMException;
 import it.polito.ai.virtuallabs.exceptions.teacherExceptions.PermissionDeniedException;
 import it.polito.ai.virtuallabs.exceptions.vmException.*;
 import it.polito.ai.virtuallabs.exceptions.vmModelExceptions.VMModelNotDefinedException;
@@ -252,5 +255,101 @@ public class VMServiceImpl implements VMService {
             }
         }
         return vms_toReturn.stream().map(i -> modelMapper.map(i, VMDTO.class)).collect(Collectors.toList());
+    }
+
+
+    @Override
+    @PreAuthorize("hasRole('STUDENT')")
+    public List<StudentDTO> getOwners(String vmId, Principal principal) {
+
+        Student student = utilitsService.checkStudent(principal.getName());
+        if (!vmRepository.existsById(vmId)) {
+            throw new VmNotFoundException(vmId);
+        }
+        VM vm = vmRepository.getOne(vmId);
+
+        if (!student.getVms().contains(vm)) {
+            throw new StudentNotOwnVMException(principal.getName(), vmId);
+        }
+
+        List<Student> owners = vm.getOwners();
+        if (owners.contains(student)) {
+            return owners.stream().map(i -> {
+                String id = i.getId();
+                StudentDTO studentDTO = modelMapper.map(i.getUser(), StudentDTO.class);
+                studentDTO.setId(id);
+                return studentDTO;
+            }).collect(Collectors.toList());
+        } else {
+            throw new PermissionDeniedException();
+        }
+    }
+
+    @Override
+    public List<StudentDTO> getNotOwners(String vmId, Principal principal) {
+        Student student = utilitsService.checkStudent(principal.getName());
+        if (!vmRepository.existsById(vmId)) {
+            throw new VmNotFoundException(vmId);
+        }
+        VM vm = vmRepository.getOne(vmId);
+
+        if (!student.getVms().contains(vm)) {
+            throw new StudentNotOwnVMException(principal.getName(), vmId);
+        }
+
+
+        List<Student> owners = vm.getOwners();
+        if (owners.contains(student)) {
+            List<Student> allTeam = vm.getTeam().getStudents();
+            List<Student> notOwners = new ArrayList<>();
+
+            for (Student student1 : allTeam) {
+                if (!owners.contains(student1)) {
+                    notOwners.add(student1);
+                }
+            }
+
+            return notOwners.stream().map(i -> {
+                String id = i.getId();
+                StudentDTO studentDTO = modelMapper.map(i.getUser(), StudentDTO.class);
+                studentDTO.setId(id);
+                return studentDTO;
+            }).collect(Collectors.toList());
+        } else {
+            throw new PermissionDeniedException();
+        }
+    }
+
+    @Override
+    public void addOwner(String vmId, String idStudent, Principal principal) {
+
+        Student student = utilitsService.checkStudent(principal.getName());
+        if (!vmRepository.existsById(vmId)) {
+            throw new VmNotFoundException(vmId);
+        }
+        VM vm = vmRepository.getOne(vmId);
+
+        if (!student.getVms().contains(vm)) {
+            throw new StudentNotOwnVMException(idStudent, vmId);
+        }
+
+
+        List<Student> students = vm.getTeam().getStudents();
+        for (Student student1 : students) {
+            if (student1.getId().equals(idStudent)) {
+                if (vm.getOwners().contains(student1)) {
+                    throw new AlreadyHasOwnership(vmId, idStudent);
+                } else {
+                    vm.getOwners().add(student1);
+                    student1.getVms().add(vm);
+
+                    studentRepository.save(student1);
+                    vmRepository.save(vm);
+                    return;
+                }
+            }
+        }
+        throw new StudentNotBelongToTeam(idStudent, vm.getTeam().getName());
+
     }
 }

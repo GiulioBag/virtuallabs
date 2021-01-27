@@ -21,6 +21,8 @@ public class ModelHelper {
         courseDTO.add(new Link(rootPath + "/courses/" + courseDTO.getName() + "/proposedTeams").withRel("proposedteams"));
         courseDTO.add(new Link(rootPath + "/courses/" + courseDTO.getName() + "/team").withRel("team"));
         courseDTO.add(new Link(rootPath + "/courses/" + courseDTO.getName() + "/myvms").withRel("myvms"));
+        courseDTO.add(new Link(rootPath + "/courses/" + courseDTO.getName() + "/disable").withRel("disable"));
+        courseDTO.add(new Link(rootPath + "/courses/" + courseDTO.getName() + "/enable").withRel("enable"));
         return courseDTO;
     }
 
@@ -49,12 +51,15 @@ public class ModelHelper {
         vmdto.add(new Link(rootPath + "/vms/" + vmdto.getId() + "/off").withRel("off"));
         vmdto.add(new Link(rootPath + "/vms/" + vmdto.getId()).withRel("delete"));
         vmdto.add(new Link(rootPath + "/vms/" + vmdto.getId() + "exec").withRel("exec"));
+        vmdto.add(new Link(rootPath + "/vms/" + vmdto.getId() + "/owners").withRel("owners"));
+        vmdto.add(new Link(rootPath + "/vms/" + vmdto.getId() + "/notowners").withRel("notowners"));
+        vmdto.add(new Link(rootPath + "/vms/" + vmdto.getId() + "/addowner/").withRel("add"));
         return vmdto;
     }
 
     public static AssignmentDTO enrich(AssignmentDTO assignmentDTO) {
-        assignmentDTO.add(new Link(rootPath + "/assignments/" + assignmentDTO.getName() + "/papers").withRel("papers"));
-        assignmentDTO.add(new Link(rootPath + "/assignments/" + assignmentDTO.getName() + "/teacher").withRel("teacher"));
+        assignmentDTO.add(new Link(rootPath + "/assignments/" + assignmentDTO.getId() + "/papers").withRel("papers"));
+        assignmentDTO.add(new Link(rootPath + "/assignments/" + assignmentDTO.getId() + "/teacher").withRel("teacher"));
         return assignmentDTO;
     }
 
@@ -62,7 +67,9 @@ public class ModelHelper {
         paperDTO.add(new Link(rootPath + "/papers/" + paperDTO.getId() + "/student").withRel("student"));
         paperDTO.add(new Link(rootPath + "/papers/" + paperDTO.getId() + "/history").withRel("history"));
         paperDTO.add(new Link(rootPath + "/papers/" + paperDTO.getId() + "/lastVersion").withRel("lastVersion"));
-
+        paperDTO.add(new Link(rootPath + "/papers/" + paperDTO.getId() + "/assignment").withRel("assignment"));
+        paperDTO.add(new Link(rootPath + "/papers/" + paperDTO.getId() + "/delivery").withRel("delivery"));
+        paperDTO.add(new Link(rootPath + "/papers/" + paperDTO.getId() + "/check").withRel("check"));
         return paperDTO;
     }
 

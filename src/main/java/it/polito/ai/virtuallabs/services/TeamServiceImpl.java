@@ -50,16 +50,22 @@ public class TeamServiceImpl implements  TeamService {
     UtilitsService utilitsService;
 
     @Override
-    @PreAuthorize("hasRole('STUDENT')")
     public List<StudentDTO> getTeamStudentByTeam(String teamId, Principal principal) throws IOException {
 
         // check if team exists
         Team team = utilitsService.checkTeam(teamId);
 
-        // check if the student is in the team
-        Student student = studentRepository.getByUser_SerialNumber(principal.getName());
-        if (!team.getStudents().contains(student) && !team.getWaitingStudents().contains(student)) {
-            throw new StudentNotBelongToTeam(principal.getName(), teamId);
+        if (principal.getName().startsWith("d")) {
+            Teacher teacher = utilitsService.checkTeacher(principal.getName());
+            if (!teacher.getCourses().contains(team.getCourse())) {
+                throw new PermissionDeniedException();
+            }
+        } else {
+            // check if the student is in the team
+            Student student = utilitsService.checkStudent(principal.getName());
+            if (!team.getStudents().contains(student) && !team.getWaitingStudents().contains(student)) {
+                throw new StudentNotBelongToTeam(principal.getName(), teamId);
+            }
         }
 
         // check if the team is not expired
@@ -151,6 +157,7 @@ public class TeamServiceImpl implements  TeamService {
             }
 
             waitingStudents.add(student);
+            System.out.println("Studente che apsetta: " + student.getId());
 
         }
         // check if students not belong to another team of the same course
@@ -175,6 +182,7 @@ public class TeamServiceImpl implements  TeamService {
         Student owner = studentRepository.getByUser_SerialNumber(principal.getName());
         team.addStudent(owner);
         studentRepository.save(owner);
+        teamRepository.save(team);
         return modelMapper.map(team, TeamDTO.class);
     }
 

@@ -6,6 +6,7 @@ import it.polito.ai.virtuallabs.dtos.VMDTO;
 import it.polito.ai.virtuallabs.exceptions.ImageException;
 import it.polito.ai.virtuallabs.exceptions.studentException.*;
 import it.polito.ai.virtuallabs.exceptions.teacherExceptions.PermissionDeniedException;
+import it.polito.ai.virtuallabs.exceptions.teacherExceptions.TeacherNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.teamException.TeamExpiredException;
 import it.polito.ai.virtuallabs.exceptions.teamException.TeamNotActivedException;
 import it.polito.ai.virtuallabs.exceptions.teamException.TeamNotFoundException;
@@ -22,7 +23,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/API/teams")
-@Log (topic = "TeamController")
+@Log(topic = "TeamController")
 
 public class TeamController {
 
@@ -30,21 +31,21 @@ public class TeamController {
     private TeamService teamService;
 
     @GetMapping("/{teamId}/members")
-    public List<StudentDTO> getTeamStudentByTeam(@PathVariable(name = "teamId") String teamId, Principal principal){
+    public List<StudentDTO> getTeamStudentByTeam(@PathVariable(name = "teamId") String teamId, Principal principal) {
         try {
-            List<StudentDTO> studentDTOList =  teamService.getTeamStudentByTeam(teamId, principal);
+            List<StudentDTO> studentDTOList = teamService.getTeamStudentByTeam(teamId, principal);
             for (StudentDTO studentDTO : studentDTOList) {
                 ModelHelper.enrich(studentDTO);
             }
             return studentDTOList;
 
-        } catch (StudentNotFoundException | TeamNotFoundException | IOException | ImageException e) {
+        } catch (StudentNotFoundException | TeamNotFoundException | IOException | ImageException | TeacherNotFoundException e) {
             log.warning("getTeamStudentByTeam " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         } catch (TeamExpiredException e) {
             log.warning("getTeamStudentByTeam " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
-        } catch (StudentNotEnrolledToCourseException | StudentNotBelongToTeam e) {
+        } catch (StudentNotEnrolledToCourseException | StudentNotBelongToTeam | PermissionDeniedException e) {
             log.warning("getTeamStudentByTeam " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
         }
@@ -90,14 +91,13 @@ public class TeamController {
 
     @GetMapping("/{teamId}/reject")
     @ResponseStatus(HttpStatus.OK)
-    public void rejectTeamParticipation(@PathVariable(name = "teamId") String teamID, Principal principal){
+    public void rejectTeamParticipation(@PathVariable(name = "teamId") String teamID, Principal principal) {
         try {
             teamService.rejectTeamParticipation(teamID, principal);
         } catch (TeamNotFoundException | StudentNotFoundException e) {
             log.warning("rejectTeamParticipation: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-        }
-        catch (StudentNotInvitedToTeamException e) {
+        } catch (StudentNotInvitedToTeamException e) {
             log.warning("rejectTeamParticipation: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
         }
@@ -106,12 +106,16 @@ public class TeamController {
     @GetMapping("/{teamName}/vms")
     public List<VMDTO> getVMSByTeam(@PathVariable(name = "teamName") String teamName, Principal principal) {
         try {
-            return teamService.getVMsByTeam(teamName, principal);
-        } catch (TeamNotFoundException | TeamExpiredException e){
+            List<VMDTO> vmdtos = teamService.getVMsByTeam(teamName, principal);
+            for (VMDTO vmdto : vmdtos) {
+                ModelHelper.enrich(vmdto);
+            }
+            return vmdtos;
+        } catch (TeamNotFoundException | TeamExpiredException e) {
             log.warning("getVMSByTeam: " + e.getClass());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
 
-        } catch (PermissionDeniedException | StudentNotBelongToTeam | TeamNotActivedException e){
+        } catch (PermissionDeniedException | StudentNotBelongToTeam | TeamNotActivedException e) {
             log.warning("getVMSByTeam: " + e.getClass());
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
         }

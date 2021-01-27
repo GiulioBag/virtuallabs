@@ -411,8 +411,8 @@ public class CourseController {
     @ResponseStatus(HttpStatus.OK)
     public AssignmentDTO insertAssignment(Principal principal, @PathVariable(name = "courseName") String courseName, @RequestBody AssignmentDTO assignmentDTO){
         try{
-            assignmentService.insertAssignment(assignmentDTO, courseName, principal.getName());
-            return ModelHelper.enrich(assignmentDTO);
+            AssignmentDTO assignmentDTO1 = assignmentService.insertAssignment(assignmentDTO, courseName, principal.getName());
+            return ModelHelper.enrich(assignmentDTO1);
         }catch(TeacherNotFoundException | CourseNotFoundException | IOException | ImageException e){
             log.warning("insertAssignment: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());

@@ -4,9 +4,9 @@ import it.polito.ai.virtuallabs.dtos.StudentDTO;
 import it.polito.ai.virtuallabs.dtos.VMDTO;
 import it.polito.ai.virtuallabs.entities.*;
 import it.polito.ai.virtuallabs.exceptions.ImageException;
-import it.polito.ai.virtuallabs.exceptions.assignmentExceptions.AssignmentException;
 import it.polito.ai.virtuallabs.exceptions.assignmentExceptions.AssignmentNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.assignmentExceptions.ExpiredAssignmentException;
+import it.polito.ai.virtuallabs.exceptions.courseException.CourseNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.paperExceptions.PaperNotChangeableException;
 import it.polito.ai.virtuallabs.exceptions.paperExceptions.PaperNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.studentException.StudentNotFoundException;
@@ -21,6 +21,7 @@ import it.polito.ai.virtuallabs.exceptions.vmException.VmCourseNotActive;
 import it.polito.ai.virtuallabs.exceptions.vmException.VmNotFoundException;
 import it.polito.ai.virtuallabs.exceptions.vmException.VmParameterException;
 import it.polito.ai.virtuallabs.repositories.*;
+import lombok.extern.java.Log;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -30,13 +31,13 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.security.Principal;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
+@Log(topic = "UtilService")
 public class UtilitsServiceImpl implements UtilitsService {
+
+    private HashMap<String, byte[]> map = new HashMap<>();
 
     @Autowired
     ModelMapper modelMapper;
@@ -57,9 +58,14 @@ public class UtilitsServiceImpl implements UtilitsService {
     @Autowired
     PaperRepository paperRepository;
 
+    public void ImgAdd(String idImg, byte[] img) {
+        map.put(idImg, img);
+    }
+
+
     @Override
-    public Team checkTeam (String teamId){
-        if(teamRepository.existsById(teamId)){
+    public Team checkTeam(String teamId) {
+        if (teamRepository.existsById(teamId)) {
             return teamRepository.getOne(teamId);
         } else {
             throw new TeamNotFoundException(teamId);
@@ -260,7 +266,7 @@ public class UtilitsServiceImpl implements UtilitsService {
     public Course checkCourse(String courseName) {
         Optional<Course> optCourse = courseRepository.findById(courseName);
         if(optCourse.isEmpty()){
-            throw  new PaperNotFoundException(courseName);
+            throw new CourseNotFoundException(courseName);
         }
         return optCourse.get();
     }
@@ -300,7 +306,7 @@ public class UtilitsServiceImpl implements UtilitsService {
     }
 
     @Override
-    public void checkExpiredAssignment(Assignment assignment, boolean activeException) {
+    public boolean checkExpiredAssignment(Assignment assignment) {
         Date date = new Date();
         Timestamp now = new Timestamp(date.getTime());
 
@@ -309,9 +315,9 @@ public class UtilitsServiceImpl implements UtilitsService {
                 assignmentPaper.setChangeable(false);
                 paperRepository.save(assignmentPaper);
             }
-            if (activeException)
-                throw new AssignmentException(assignment.getId());
+            return false;
         }
+        return true;
     }
 
     @Override
@@ -329,7 +335,8 @@ public class UtilitsServiceImpl implements UtilitsService {
         try (OutputStream os = new FileOutputStream(file)) {
             os.write(image);
             os.flush();
-
+            int index = path.split("/").length - 1;
+            String path_ = path.split("/")[index];
         } catch (Exception e) {
             throw new ImageException(e.getMessage());
         }
@@ -337,15 +344,25 @@ public class UtilitsServiceImpl implements UtilitsService {
 
     @Override
     public byte[] fromPathToImage(String path) throws IOException {
-        InputStream is = this.getClass().getResourceAsStream("/static/images/" + path + ".jpg");
-        BufferedImage img = ImageIO.read(is);
-        ByteArrayOutputStream bao = new ByteArrayOutputStream();
-        ImageIO.write(img, "jpg", bao);
-        return bao.toByteArray();
+        BufferedImage img;
+        int index = path.split("/").length - 1;
+        String path_ = path.split("/")[index];
+        try {
+            InputStream is = this.getClass().getResourceAsStream("/static/images/" + path + ".jpg");
+            img = ImageIO.read(is);
+            log.info("Non usiamo la mappa per:" + path.split("/")[index]);
+            ByteArrayOutputStream bao = new ByteArrayOutputStream();
+            ImageIO.write(img, "jpg", bao);
+            map.remove(path_);
+            return bao.toByteArray();
+        } catch (IllegalArgumentException e) {
+            log.info("Usiamo la mappa per l'immagine:" + path.split("/")[index]);
+            return map.get(path_);
+        }
     }
 
     @Override
-    public StudentDTO fromStudentEntityToDTO (Student student) throws IOException {
+    public StudentDTO fromStudentEntityToDTO(Student student) throws IOException {
         StudentDTO studentDTO = new StudentDTO();
         studentDTO.setId(student.getId());
         studentDTO.setEmail(student.getUser().getEmail());
@@ -354,5 +371,30 @@ public class UtilitsServiceImpl implements UtilitsService {
         studentDTO.setSerialNumber(student.getUser().getSerialNumber());
         studentDTO.setPhoto(fromPathToImage("/users/" + studentDTO.getSerialNumber()));
         return studentDTO;
+    }
+
+    @Override
+    public void removeImgsFromMap() {
+
+        log.info("Remove Images from map starts!");
+        String rootPath = "/static/images/";
+        Set<String> keys = map.keySet();
+        List<String> path_ = new ArrayList<>();
+        path_.add("assignments");
+        path_.add("deliveredPapers");
+        path_.add("users");
+
+        int count = 0;
+
+        for (String key : keys) {
+            for (String s : path_) {
+                File f = new File(rootPath + s + "/" + key + ".jpg");
+                if (f.exists()) {
+                    map.remove(key);
+                    count += 1;
+                }
+            }
+        }
+        log.info("Removed images: " + count);
     }
 }
