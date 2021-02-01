@@ -41,6 +41,9 @@ public class VmController {
         } catch (StudentNotOwnVMException | ReachedMaximumTotalValueException e){
             log.warning("vmChangeParam: " + e.getClass());
             throw  new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
+        } catch (VmOnException | VmOffException  e) {
+            log.warning("vm on off excep: " + e.getClass());
+            throw  new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
     }
 

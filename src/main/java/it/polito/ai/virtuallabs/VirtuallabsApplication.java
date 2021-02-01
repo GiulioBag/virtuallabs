@@ -4,13 +4,15 @@ import lombok.extern.java.Log;
 import org.modelmapper.ModelMapper;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.annotation.Bean;
 
 import java.io.File;
 
 @SpringBootApplication
 @Log(topic = "Main")
-public class VirtuallabsApplication {
+public class VirtuallabsApplication extends SpringBootServletInitializer {
 
     @Bean
     ModelMapper modelMapper() {
@@ -27,6 +29,11 @@ public class VirtuallabsApplication {
         log.info("Creazione images: " + new File(root_path + "images/users").mkdir());
         log.info("Creazione images: " + new File(root_path + "images/assignments").mkdir());
         log.info("Creazione images: " + new File(root_path + "images/deliveredPapers").mkdir());
+    }
+
+    @Override
+    protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
+        return builder.sources(SpringBootServletInitializer.class);
     }
 
 }

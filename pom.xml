@@ -18,8 +18,16 @@
         <java.version>11</java.version>
     </properties>
 
+    <!--<packaging>war</packaging>-->
+
 
     <dependencies>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-tomcat</artifactId>
+            <scope>provided</scope>
+        </dependency>
 
         <!-- Possibili dipendenze per il caricamento delle immagini -->
 
